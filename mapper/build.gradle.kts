@@ -11,7 +11,6 @@ java {
     }
 }
 
-
 repositories {
     mavenCentral()
 }

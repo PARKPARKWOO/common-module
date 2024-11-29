@@ -1,0 +1,56 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cicd:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: adopt
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Test with Gradle
+        run: ./gradlew --info test
+
+      - name: Extract VERSION from gradle.properties
+        id: extract_version
+        run: |
+          VERSION=$(awk -F '=' '/^version/{print $2}' gradle.properties)
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${VERSION}-SNAPSHOT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish package
+        run: ./gradlew publish -Pversion=$VERSION -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
+        env:
+          VERSION: ${{ steps.extract_version.outputs.VERSION }}
