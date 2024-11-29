@@ -6,48 +6,50 @@ plugins {
 group = "org.woo"
 version = "0.0.1-SNAPSHOT"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
 repositories {
     mavenCentral()
 }
 
-dependencies {
-}
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "maven-publish")
 
-publishing {
     repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/PARKPARKWOO/common-module")
-            credentials {
-                username = project.findProperty("gpr.user")?.toString()
-                password = project.findProperty("gpr.key")?.toString()
-            }
+        mavenCentral()
+    }
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
     }
 
-//    publications {
-//        create<MavenPublication>("mavenJava") {
-//            groupId = "org.woo"
-//            version = project.findProperty("version") as String
-
-//            from(components["java"])
-//            artifact(tasks.named("sourceJar"))
-//        }
-//     }
-}
-
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.add("-Xjsr305=strict")
+        }
     }
-}
 
-tasks.withType<Test> {
-    useJUnitPlatform()
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/PARKPARKWOO/common-module")
+                credentials {
+                    username = project.findProperty("gpr.user")?.toString()
+                    password = project.findProperty("gpr.key")?.toString()
+                }
+            }
+        }
+
+        publications {
+            create<MavenPublication>("mavenJava") {
+                from(components["java"])
+            }
+        }
+    }
 }
