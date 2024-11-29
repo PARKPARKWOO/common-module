@@ -1,4 +1,4 @@
-package com.klleon.common.mapper.serializer
+package org.woo.mapper.serializer
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonSerializer
