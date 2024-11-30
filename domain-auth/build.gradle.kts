@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "org.woo"
-version = "0.0.2-SNAPSHOT"
+version = "0.0.3-SNAPSHOT"
 
 java {
     toolchain {
