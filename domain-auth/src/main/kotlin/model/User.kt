@@ -8,7 +8,7 @@ data class User(
     val password: String,
     val socialId: String?,
     val provider: String?,
-    val role: String,
+    val role: Role,
     var createdAt: LocalDateTime,
     var updatedAt: LocalDateTime,
     var deletedAt: LocalDateTime?,
