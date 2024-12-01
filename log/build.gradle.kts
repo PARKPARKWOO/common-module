@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.woo"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
