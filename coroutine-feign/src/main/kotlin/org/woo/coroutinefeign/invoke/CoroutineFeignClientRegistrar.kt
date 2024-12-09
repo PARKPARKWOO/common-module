@@ -6,13 +6,11 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor
 import org.springframework.context.ApplicationContext
-import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.woo.coroutinefeign.annotation.CoroutineFeignClient
 import org.woo.coroutinefeign.outgoing.CoroutineFeignAdapter
 import java.lang.reflect.Proxy
 
-@Component
 class CoroutineFeignClientRegistrar(
     private val applicationContext: ApplicationContext,
     private val eurekaClient: EurekaClient,
@@ -32,7 +30,7 @@ class CoroutineFeignClientRegistrar(
             if (candidate.isInterface) {
                 val proxy = Proxy.newProxyInstance(
                     candidate.classLoader,
-                    arrayOf(candidate)
+                    arrayOf(candidate),
                 ) { proxy, method, args ->
                     CoroutineFeignInvocationHandler(createAdapter()).invoke(proxy, method, args)
                 } as Any
