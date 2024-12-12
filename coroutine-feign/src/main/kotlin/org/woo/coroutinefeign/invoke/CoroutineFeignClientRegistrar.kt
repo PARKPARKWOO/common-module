@@ -12,13 +12,23 @@ import org.woo.coroutinefeign.annotation.CoroutineFeignClient
 import org.woo.coroutinefeign.outgoing.CoroutineFeignAdapter
 import java.lang.reflect.Proxy
 
-class CoroutineFeignClientRegistrar(
-    private val applicationContext: ApplicationContext,
-    private val eurekaClient: EurekaClient,
-    private val webClient: WebClient,
-) : BeanDefinitionRegistryPostProcessor {
+class CoroutineFeignClientRegistrar : BeanDefinitionRegistryPostProcessor {
     companion object {
         private const val CLIENT_BEAN_NAME = "coroutineFeignClientInvocationHandler_"
+    }
+
+    private lateinit var applicationContext: ApplicationContext
+    private lateinit var eurekaClient: EurekaClient
+    private lateinit var webClient: WebClient
+
+    fun initialize(
+        applicationContext: ApplicationContext,
+        eurekaClient: EurekaClient,
+        webClient: WebClient,
+    ) {
+        this.applicationContext = applicationContext
+        this.eurekaClient = eurekaClient
+        this.webClient = webClient
     }
 
     override fun postProcessBeanDefinitionRegistry(registry: BeanDefinitionRegistry) {
@@ -29,24 +39,24 @@ class CoroutineFeignClientRegistrar(
 
         for (candidate in candidates) {
             if (candidate.isInterface) {
-                val proxy = Proxy.newProxyInstance(
-                    candidate.classLoader,
-                    arrayOf(candidate),
-                ) { proxy, method, args ->
-                    CoroutineFeignInvocationHandler(createAdapter()).invoke(proxy, method, args)
-                } as Any
+                val proxy =
+                    Proxy.newProxyInstance(
+                        candidate.classLoader,
+                        arrayOf(candidate),
+                    ) { proxy, method, args ->
+                        CoroutineFeignInvocationHandler(createAdapter()).invoke(proxy, method, args)
+                    } as Any
 
-                val builder = BeanDefinitionBuilder.genericBeanDefinition(candidate as Class<Any>) {
-                    proxy
-                }
+                val builder =
+                    BeanDefinitionBuilder.genericBeanDefinition(candidate as Class<Any>) {
+                        proxy
+                    }
                 registry.registerBeanDefinition(CLIENT_BEAN_NAME + candidate.simpleName, builder.beanDefinition)
             }
         }
     }
 
-    private fun createAdapter(): CoroutineFeignAdapter {
-        return CoroutineFeignAdapter(eurekaClient, webClient)
-    }
+    private fun createAdapter(): CoroutineFeignAdapter = CoroutineFeignAdapter(eurekaClient, webClient)
 
     override fun postProcessBeanFactory(beanFactory: ConfigurableListableBeanFactory) {
         // No-op

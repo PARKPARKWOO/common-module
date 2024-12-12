@@ -16,7 +16,13 @@ class CoroutineFeignConfig {
         webClient: WebClient,
     ): CoroutineFeignClientRegistrar {
         val eurekaClient = applicationContext.getBean(EurekaClient::class.java)
-        return CoroutineFeignClientRegistrar(applicationContext, eurekaClient, webClient)
+        val coroutineFeignClientRegistrar = CoroutineFeignClientRegistrar()
+        coroutineFeignClientRegistrar.initialize(
+            applicationContext = applicationContext,
+            eurekaClient = eurekaClient,
+            webClient = webClient,
+        )
+        return coroutineFeignClientRegistrar
     }
 
     @Bean
