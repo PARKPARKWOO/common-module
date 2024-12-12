@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.woo"
-version = "0.0.3-SNAPSHOT"
+version = "0.0.4-SNAPSHOT"
 
 java {
     toolchain {
@@ -33,6 +33,8 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("org.reflections:reflections:0.10.2")
 
+    // eureka
+    runtimeOnly("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     api("io.github.openfeign:feign-core:13.5")
     project(":mapper")
 }

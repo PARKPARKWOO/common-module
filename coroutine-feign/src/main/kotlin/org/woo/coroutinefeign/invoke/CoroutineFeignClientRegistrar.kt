@@ -2,6 +2,7 @@ package org.woo.coroutinefeign.invoke
 
 import com.netflix.discovery.EurekaClient
 import org.reflections.Reflections
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor
@@ -47,7 +48,7 @@ class CoroutineFeignClientRegistrar(
         return CoroutineFeignAdapter(eurekaClient, webClient)
     }
 
-    override fun postProcessBeanFactory(beanFactory: org.springframework.beans.factory.config.ConfigurableListableBeanFactory) {
+    override fun postProcessBeanFactory(beanFactory: ConfigurableListableBeanFactory) {
         // No-op
     }
 }
