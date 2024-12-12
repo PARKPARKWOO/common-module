@@ -8,21 +8,17 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
 class CoroutineFeignConfig {
-    lateinit var eurekaClient: EurekaClient
-
     @Bean
     fun coroutineFeignClientRegistrar(
         applicationContext: ApplicationContext,
         webClient: WebClient,
-    ): CoroutineFeignClientRegistrar {
+    ): CoroutineFeignClientProcessor {
         val eurekaClient = applicationContext.getBean(EurekaClient::class.java)
-        val coroutineFeignClientRegistrar = CoroutineFeignClientRegistrar()
-        coroutineFeignClientRegistrar.initialize(
+        return CoroutineFeignClientProcessor(
             applicationContext = applicationContext,
             eurekaClient = eurekaClient,
             webClient = webClient,
         )
-        return coroutineFeignClientRegistrar
     }
 
     @Bean
