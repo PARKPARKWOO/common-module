@@ -6,4 +6,4 @@ import org.woo.coroutinefeign.invoke.CoroutineFeignConfig
 @Import(CoroutineFeignConfig::class)
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class EnableCoroutineFeign()
+annotation class EnableCoroutineFeign

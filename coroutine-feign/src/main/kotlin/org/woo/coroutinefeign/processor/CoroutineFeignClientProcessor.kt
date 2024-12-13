@@ -1,4 +1,4 @@
-package org.woo.coroutinefeign.invoke
+package org.woo.coroutinefeign.processor
 
 import com.netflix.discovery.EurekaClient
 import org.reflections.Reflections
@@ -6,6 +6,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor
 import org.springframework.context.ApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import org.woo.coroutinefeign.annotation.CoroutineFeignClient
+import org.woo.coroutinefeign.invoke.CoroutineFeignInvocationHandler
 import org.woo.coroutinefeign.outgoing.CoroutineFeignAdapter
 import java.lang.reflect.Proxy
 
