@@ -17,7 +17,7 @@ class CoroutineFeignInvocationHandler(
     private val adapter: CoroutineFeignAdapter,
 ) : InvocationHandler {
     override fun invoke(
-        proxy: Any,
+        proxy: Any?,
         method: Method,
         args: Array<out Any>?,
     ): Any {
