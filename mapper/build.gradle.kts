@@ -2,7 +2,6 @@ plugins {
     kotlin("jvm") version "1.9.25"
 }
 
-group = "org.woo"
 version = "0.0.1-SNAPSHOT"
 
 java {

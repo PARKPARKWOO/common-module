@@ -3,7 +3,6 @@ plugins {
     id("maven-publish")
 }
 
-group = "org.woo"
 version = "0.0.2-SNAPSHOT"
 
 repositories {
@@ -13,6 +12,8 @@ repositories {
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "maven-publish")
+
+    group = "org.woo"
 
     repositories {
         mavenCentral()

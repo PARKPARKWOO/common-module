@@ -5,7 +5,6 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
 }
 
-group = "org.woo"
 version = "0.0.2-SNAPSHOT"
 
 dependencies {
