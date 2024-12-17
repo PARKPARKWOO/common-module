@@ -44,7 +44,7 @@ kotlin {
 protobuf {
     protoc {
 //         Protobuf compiler
-        artifact = "com.google.protobuf:protoc:$$PROTOBUF"
+        artifact = "com.google.protobuf:protoc:$PROTOBUF"
     }
     plugins {
 //         GRPC plugin for Protobuf
