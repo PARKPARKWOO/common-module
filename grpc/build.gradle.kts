@@ -9,10 +9,7 @@ plugins {
     id("idea")
 }
 
-val protobufVersion = "3.23.4"
-val grpcVersion = "1.58.0"
-
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 
 java {
     toolchain {
