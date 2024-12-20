@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+
+option java_package = "org.woo.error.grpc";
+option java_outer_classname = "ErrorProto";
+
+
+message ErrorResponse {
+  string message = 1;
+  int32 status = 2;
+}
