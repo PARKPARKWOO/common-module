@@ -9,7 +9,7 @@ plugins {
     id("idea")
 }
 
-version = "0.0.4-SNAPSHOT"
+version = "0.0.5-SNAPSHOT"
 
 java {
     toolchain {
@@ -22,17 +22,17 @@ repositories {
 }
 
 dependencies {
-    implementation("io.grpc:grpc-protobuf:$GRPC")
-    implementation("io.grpc:grpc-stub:$GRPC")
+    api("io.grpc:grpc-protobuf:$GRPC")
+    api("io.grpc:grpc-stub:$GRPC")
 
     if (JavaVersion.current().isJava9Compatible) {
         // Workaround for @javax.annotation.Generated
         // see: https://github.com/grpc/grpc-java/issues/3633
-        implementation("javax.annotation:javax.annotation-api:1.3.1")
+        api("javax.annotation:javax.annotation-api:1.3.1")
     } else {
         compileOnly("jakarta.annotation:jakarta.annotation-api:$PROTOBUF") // Java 9+ compatibility - Do NOT update to 2.0.0
     }
-    implementation("io.grpc:protoc-gen-grpc-java:$GRPC")
+    api("io.grpc:protoc-gen-grpc-java:$GRPC")
 }
 
 kotlin {

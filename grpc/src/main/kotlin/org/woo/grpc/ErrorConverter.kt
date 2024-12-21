@@ -26,4 +26,6 @@ object ErrorConverter {
         metadata.put(keyForProto, error)
         return metadata
     }
+
+    fun attachErrorToMetadata(error: ErrorResponse): Metadata = attachErrorToMetadata(error, null)
 }
