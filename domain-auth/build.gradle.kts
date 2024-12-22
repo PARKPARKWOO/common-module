@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "1.9.25"
 }
 
-version = "0.0.8-SNAPSHOT"
+version = "0.0.9-SNAPSHOT"
 
 java {
     toolchain {
