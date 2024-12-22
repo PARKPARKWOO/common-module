@@ -15,5 +15,6 @@ message Passport {
 message UserInfoResponse {
   string id = 1;
   optional string email = 2;
-  string role = 3;
+  optional string name = 3;
+  string role = 4;
 }
