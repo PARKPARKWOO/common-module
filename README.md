@@ -4,10 +4,12 @@
 ---
 
 ## 주요 기능
-1. Logging (log 모듈)
-- webflux와 mvc 환경 모두 지원
-- 사용자 정의 로깅 필터 제공
-  - MDC(Mapped Diagnostic Context) 초기화 로직 포함
+1. apm (application 모니터링 관련 모듈)
+   1. log
+      - webflux와 mvc 환경 모두 지원
+      - 사용자 정의 로깅 필터 제공
+        - MDC(Mapped Diagnostic Context) 초기화 로직 포함
+   2. pyroscope
 
 2. Mapper (mapper 모듈)
 - 객체 간 매핑을 간편하게 처리할 수 있는 유틸리티 제공
@@ -18,6 +20,10 @@
 4. Domain (domain-* 모듈)
 - 공통 엔티티 및 데이터 모델 정의
   - 예: domain-auth, domain-user 등
+
+5. grpc
+- application 통신을 위한 proto 파일 관리
+
 
 ## 설치 및 의존성 추가
 
@@ -39,10 +45,11 @@ repositories {
 
 dependencies {
     // 필요한 모듈만 선택적으로 추가
-    implementation("org.woo:log:+")          // Logging 기능
+    implementation("org.woo:apm:+")          // Logging 기능
     implementation("org.woo:mapper:+")       // Object Mapping 기능
     implementation("org.woo:http:+")         // HTTP Client 유틸리티
     implementation("org.woo:domain-auth:+")  // 인증 관련 Domain
+    implementation("org.woo:grpc:+")
 }
 
 ```
