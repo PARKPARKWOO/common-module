@@ -5,7 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
 }
 
-version = "0.0.2-SNAPSHOT"
+version = "0.0.3-SNAPSHOT"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -14,6 +14,7 @@ dependencies {
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    api("io.pyroscope:agent:0.15.2")
 }
 
 kotlin {

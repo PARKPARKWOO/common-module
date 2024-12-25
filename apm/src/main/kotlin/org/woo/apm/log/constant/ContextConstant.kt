@@ -1,4 +1,4 @@
-package org.woo.log.constant
+package org.woo.apm.log.constant
 
 object ContextConstant {
     const val IS_MOBILE = "isMobile"
