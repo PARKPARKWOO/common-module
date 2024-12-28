@@ -57,10 +57,7 @@ jobs:
 
       - name: Publish specific module
         run: |
-          ./gradlew :$MODULE:publish \
-            -Pversion=$VERSION \
-            -Pgpr.user=${{ github.actor }} \
-            -Pgpr.key=${{ secrets.GIT_TOKEN }}
+          ./gradlew :$MODULE:publish -Pversion=$VERSION -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
         env:
           VERSION: ${{ env.VERSION }}
           MODULE: ${{ env.MODULE }}
