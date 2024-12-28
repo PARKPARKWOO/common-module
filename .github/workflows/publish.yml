@@ -11,11 +11,11 @@ permissions:
   packages: write
 
 jobs:
-  cicd:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -40,33 +40,18 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew --info test
 
-      - name: Extract versions for all modules
+      - name: Extract Versions for All Modules
         id: extract_versions
-#        module 추가되면 같이 추가해줘야한다.
         run: |
-          MODULES=("apm" "coroutine-feign" "domain-auth" "grpc" "http" "mapper")
-          for module in "${MODULES[@]}"; do
-            if [[ -f "$module/gradle.properties" ]]; then
-              VERSION=$(awk -F '=' '/^version/{print $2}' $module/gradle.properties | xargs)
-              if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-                echo "${module}_VERSION=$VERSION" >> $GITHUB_ENV
-              else
-                echo "${module}_VERSION=${VERSION}-SNAPSHOT" >> $GITHUB_ENV
-              fi
-            fi
+          for module in $(ls -d */ | grep -v buildSrc | cut -f1 -d'/'); do
+            VERSION=$(awk -F '=' '/^version/ {print $2}' $module/gradle.properties)
+            echo "${module}_VERSION=${VERSION}" >> $GITHUB_ENV
           done
 
-      - name: Print extracted versions
+      - name: Publish packages for all modules
         run: |
-          echo "Apm version: ${{ env.apm_VERSION }}"
-          echo "Coroutine-Feign version: ${{ env.coroutine-feign_VERSION }}"
-          echo "Domain-Auth version: ${{ env.domain-auth_VERSION }}"
-          echo "Grpc version: ${{ env.grpc_VERSION }}"
-          echo "Http version: ${{ env.http_VERSION }}"
-
-      - name: Publish all modules
-        run: |
-          MODULES=("apm" "coroutine-feign" "domain-auth" "grpc" "http" "mapper" )
-          for module in "${MODULES[@]}"; do
-            ./gradlew :$module:publish -Pversion=${{ env.${module}_VERSION }} -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
+          for module in $(ls -d */ | grep -v buildSrc | cut -f1 -d'/'); do
+            VERSION_VAR_NAME="${module}_VERSION"
+            VERSION=${!VERSION_VAR_NAME}
+            ./gradlew :$module:publish -Pversion=$VERSION -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GITHUB_TOKEN }}
           done
