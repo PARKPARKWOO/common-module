@@ -39,8 +39,8 @@ jobs:
 
       - name: Extract module name from branch
         id: extract_module
+        #           Branch 이름에서 첫 번째 부분 추출 (grpc/task -> grpc)
         run: |
-#           Branch 이름에서 첫 번째 부분 추출 (grpc/task -> grpc)
           MODULE=$(echo "${{ github.ref_name }}" | cut -d'/' -f1)
           echo "MODULE=$MODULE" >> $GITHUB_ENV
 
