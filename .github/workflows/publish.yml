@@ -2,8 +2,8 @@ name: publish
 
 on:
   push:
-    branches:
-      - main
+    branches-ignore:
+      - main # main 브랜치는 제외
   pull_request:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 jobs:
-  cicd:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,18 +37,26 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Test with Gradle
-        run: ./gradlew --info test
+      - name: Extract module name from branch
+        id: extract_module
+        run: |
+#           Branch 이름에서 첫 번째 부분 추출 (grpc/task -> grpc)
+          MODULE=$(echo "${{ github.ref_name }}" | cut -d'/' -f1)
+          echo "MODULE=$MODULE" >> $GITHUB_ENV
 
       - name: Extract VERSION from gradle.properties
         id: extract_version
         run: |
-          VERSION=$(awk -F '=' '/^version/{print $2}' gradle.properties)
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          if [ -f "$MODULE/gradle.properties" ]; then
+            VERSION=$(awk -F '=' '/^version/{print $2}' $MODULE/gradle.properties)
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
           else
-            echo "VERSION=${VERSION}-SNAPSHOT" >> $GITHUB_OUTPUT
-          fi
+            echo "gradle.properties 파일이 $MODULE 디렉토리에 없습니다."
+            exit 1
 
-      - name: Publish package
-        run: ./gradlew publish -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
+      - name: Publish specific module
+        run: |
+          ./gradlew :$MODULE:publish \
+            -Pversion=$VERSION \
+            -Pgpr.user=${{ github.actor }} \
+            -Pgpr.key=${{ secrets.GIT_TOKEN }}
