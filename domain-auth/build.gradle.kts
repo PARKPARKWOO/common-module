@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "1.9.25"
 }
 
-version = "0.0.9-SNAPSHOT"
+version = project.findProperty("version") as String
 
 java {
     toolchain {

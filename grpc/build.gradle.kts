@@ -9,7 +9,7 @@ plugins {
     id("idea")
 }
 
-version = "0.0.7-SNAPSHOT"
+version = project.findProperty("version") as String
 
 java {
     toolchain {

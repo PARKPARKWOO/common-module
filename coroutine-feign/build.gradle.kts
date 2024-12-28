@@ -5,7 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
 }
 
-version = "0.0.9-SNAPSHOT"
+version = project.findProperty("version") as String
 
 java {
     toolchain {
