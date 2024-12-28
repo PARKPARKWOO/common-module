@@ -39,10 +39,10 @@ jobs:
 
       - name: Extract module name from branch
         id: extract_module
-        #           Branch 이름에서 첫 번째 부분 추출 (grpc/task -> grpc)
         run: |
           MODULE=$(echo "${{ github.ref_name }}" | cut -d'/' -f1)
           echo "MODULE=$MODULE" >> $GITHUB_ENV
+          echo "Extracted module: $MODULE"
 
       - name: Extract VERSION from gradle.properties
         id: extract_version
@@ -50,6 +50,7 @@ jobs:
           if [ -f "$MODULE/gradle.properties" ]; then
             VERSION=$(awk -F '=' '/^version/{print $2}' $MODULE/gradle.properties)
             echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "Extracted version: $VERSION"
           else
             echo "gradle.properties 파일이 $MODULE 디렉토리에 없습니다."
             exit 1
@@ -57,7 +58,11 @@ jobs:
 
       - name: Publish specific module
         run: |
-          ./gradlew :$MODULE:publish -Pversion=$VERSION -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
+          echo "Publishing module: $MODULE with version: $VERSION"
+          ./gradlew ":$MODULE:publish" \
+            -Pversion="$VERSION" \
+            -Pgpr.user="${{ github.actor }}" \
+            -Pgpr.key="${{ secrets.GIT_TOKEN }}"
         env:
-          VERSION: ${{ env.VERSION }}
           MODULE: ${{ env.MODULE }}
+          VERSION: ${{ env.VERSION }}
