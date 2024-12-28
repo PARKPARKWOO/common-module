@@ -42,8 +42,9 @@ jobs:
         run: |
           for module in $(find . -maxdepth 1 -type d | grep -v '^\.$' | grep -v buildSrc); do
             if [ -f "$module/gradle.properties" ]; then
+              module_cleaned=$(echo "$module" | sed 's|./||' | sed 's|/|_|g')
               VERSION=$(awk -F '=' '/^version/ {print $2}' "$module/gradle.properties")
-              echo "${module}_VERSION=${VERSION}" >> $GITHUB_ENV
+              echo "${module_cleaned}_VERSION=${VERSION}" >> $GITHUB_ENV
             else
               echo "No gradle.properties found in $module. Skipping..."
             fi
@@ -53,7 +54,8 @@ jobs:
         run: |
           for module in $(find . -maxdepth 1 -type d | grep -v '^\.$' | grep -v buildSrc); do
             if [ -f "$module/gradle.properties" ]; then
-              VERSION_VAR_NAME="${module}_VERSION"
+              module_cleaned=$(echo "$module" | sed 's|./||' | sed 's|/|_|g')
+              VERSION_VAR_NAME="${module_cleaned}_VERSION"
               VERSION=${!VERSION_VAR_NAME}
               ./gradlew :$module:publish -Pversion=$VERSION -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GITHUB_TOKEN }}
             fi
