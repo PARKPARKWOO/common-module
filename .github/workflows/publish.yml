@@ -62,5 +62,5 @@ jobs:
             -Pgpr.user=${{ github.actor }} \
             -Pgpr.key=${{ secrets.GIT_TOKEN }}
         env:
-          VERSION: ${{ steps.extract_version.outputs.VERSION }}
-          MODULE: ${{ steps.extract_module.outputs.MODULE }}
+          VERSION: ${{ env.VERSION }}
+          MODULE: ${{ env.MODULE }}
