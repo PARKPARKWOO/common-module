@@ -3,6 +3,15 @@
 
 ---
 
+## 배포방법
+git branch 의 prefix 기준으로 해당 모듈을 배포합니다.
+1. branch checkout
+```shell
+git checkout -b modulename/feature
+```
+2. git push
+
+
 ## 주요 기능
 1. apm (application 모니터링 관련 모듈)
    1. log
