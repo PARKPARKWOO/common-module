@@ -11,16 +11,6 @@ plugins {
 
 version = project.findProperty("version") as String
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     api("io.grpc:grpc-protobuf:$GRPC")
     api("io.grpc:grpc-stub:$GRPC")
@@ -33,12 +23,6 @@ dependencies {
         compileOnly("jakarta.annotation:jakarta.annotation-api:$PROTOBUF") // Java 9+ compatibility - Do NOT update to 2.0.0
     }
     api("io.grpc:protoc-gen-grpc-java:$GRPC")
-}
-
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
-    }
 }
 
 protobuf {
