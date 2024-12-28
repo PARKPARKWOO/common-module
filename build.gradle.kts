@@ -3,8 +3,6 @@ plugins {
     id("maven-publish")
 }
 
-version = "0.0.2-SNAPSHOT"
-
 repositories {
     mavenCentral()
 }
@@ -18,6 +16,8 @@ subprojects {
     repositories {
         mavenCentral()
     }
+
+    val projectVersion = project.findProperty("version")?.toString() ?: rootProject.version.toString()
 
     java {
         toolchain {
@@ -50,6 +50,7 @@ subprojects {
         publications {
             create<MavenPublication>("mavenJava") {
                 from(components["java"])
+                version = projectVersion
             }
         }
     }

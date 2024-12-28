@@ -40,17 +40,33 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew --info test
 
-      - name: Extract VERSION from gradle.properties
-        id: extract_version
+      - name: Extract versions for all modules
+        id: extract_versions
+#        module 추가되면 같이 추가해줘야한다.
         run: |
-          VERSION=$(awk -F '=' '/^version/{print $2}' gradle.properties)
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION=${VERSION}-SNAPSHOT" >> $GITHUB_OUTPUT
-          fi
+          MODULES=("apm" "coroutine-feign" "domain-auth" "grpc" "http" "mapper")
+          for module in "${MODULES[@]}"; do
+            if [[ -f "$module/gradle.properties" ]]; then
+              VERSION=$(awk -F '=' '/^version/{print $2}' $module/gradle.properties | xargs)
+              if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+                echo "${module}_VERSION=$VERSION" >> $GITHUB_ENV
+              else
+                echo "${module}_VERSION=${VERSION}-SNAPSHOT" >> $GITHUB_ENV
+              fi
+            fi
+          done
 
-      - name: Publish package
-        run: ./gradlew publish -Pversion=$VERSION -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
-        env:
-          VERSION: ${{ steps.extract_version.outputs.VERSION }}
+      - name: Print extracted versions
+        run: |
+          echo "Apm version: ${{ env.apm_VERSION }}"
+          echo "Coroutine-Feign version: ${{ env.coroutine-feign_VERSION }}"
+          echo "Domain-Auth version: ${{ env.domain-auth_VERSION }}"
+          echo "Grpc version: ${{ env.grpc_VERSION }}"
+          echo "Http version: ${{ env.http_VERSION }}"
+
+      - name: Publish all modules
+        run: |
+          MODULES=("apm" "coroutine-feign" "domain-auth" "grpc" "http" "mapper" )
+          for module in "${MODULES[@]}"; do
+            ./gradlew :$module:publish -Pversion=${{ env.${module}_VERSION }} -Pgpr.user=${{ github.actor }} -Pgpr.key=${{ secrets.GIT_TOKEN }}
+          done
