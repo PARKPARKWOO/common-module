@@ -17,15 +17,17 @@ class PyroscopeConfig(
     @Value("\${pyroscope.address}")
     val pyroscopeAddress: String,
 ) {
-    @PostConstruct
-    fun init() {
-        PyroscopeAgent.start(
-            Builder()
-                .setApplicationName(appName)
-                .setProfilingEvent(EventType.ITIMER)
-                .setFormat(Format.JFR)
-                .setServerAddress(pyroscopeAddress)
-                .build(),
-        )
+    init {
+        fun init() {
+            print("Initialize pyroscope")
+            PyroscopeAgent.start(
+                Builder()
+                    .setApplicationName(appName)
+                    .setProfilingEvent(EventType.ITIMER)
+                    .setFormat(Format.JFR)
+                    .setServerAddress(pyroscopeAddress)
+                    .build(),
+            )
+        }
     }
 }
