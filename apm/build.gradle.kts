@@ -15,6 +15,11 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     api("io.pyroscope:agent:0.15.2")
+
+    implementation("io.micrometer:micrometer-tracing:1.4.1")
+    implementation("io.micrometer:micrometer-tracing-bridge-brave:1.4.1") {
+        exclude(group = "io.zipkin.reporter2")
+    }
 }
 
 tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
