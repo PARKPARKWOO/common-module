@@ -1,6 +1,5 @@
 package org.woo.apm.log.config
 
-import brave.Span
 import brave.Tracer
 import brave.Tracing
 import brave.sampler.Sampler
@@ -16,10 +15,15 @@ class TracingConfig(
     val applicationName: String,
 ) {
     companion object {
-        fun trace(tracer: Tracer): WebFilter =
+        fun create(tracer: Tracer): WebFilter =
             WebFilter { exchange, chain ->
-                val currentSpan: Span = tracer.currentSpan()
-                exchange.response.headers.add(TRACE_ID, currentSpan.context().traceId().toString())
+                val currentSpan = tracer.currentSpan()
+                if (currentSpan != null) {
+                    exchange.response.headers.add(TRACE_ID, currentSpan.context().traceIdString())
+                } else {
+                    // Tracing Context가 없는 경우를 처리 (Optional: 로그 추가)
+                    exchange.response.headers.add(TRACE_ID, "no-span")
+                }
                 chain.filter(exchange)
             }
     }
