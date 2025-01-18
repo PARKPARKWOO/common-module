@@ -21,7 +21,7 @@ class TokenInitializeInMetadata(
                 responseListener: Listener<RespT>?,
                 headers: Metadata?,
             ) {
-                headers?.put(AuthMetadata.AUTHORIZATION_METADATA_KEY, "Bearer $accessToken")
+                headers?.put(AuthMetadata.AUTHORIZATION_METADATA_KEY, accessToken)
                     ?: Metadata().apply { put(AuthMetadata.AUTHORIZATION_METADATA_KEY, "Bearer $accessToken") }
                 super.start(responseListener, headers)
             }
