@@ -9,7 +9,7 @@ service UserInfoService {
 }
 
 message Passport {
-  optional UserInfoResponse userInfo = 1;
+  optional UserInfoResponse user_info = 1;
 }
 
 message UserInfoResponse {
