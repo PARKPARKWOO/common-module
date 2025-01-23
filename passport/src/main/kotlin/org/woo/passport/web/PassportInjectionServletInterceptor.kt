@@ -1,4 +1,4 @@
-package org.woo.passport.interceptor
+package org.woo.passport.web
 
 import annotation.PublicEndPoint
 import dto.UserContext
