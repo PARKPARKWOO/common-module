@@ -6,7 +6,11 @@ open class ApiResponseBody(
 
 data class SucceededApiResponseBody<T>(
     val data: T?,
-) : ApiResponseBody(true)
+) : ApiResponseBody(true) {
+    companion object {
+        fun succeed(): SucceededApiResponseBody<Unit> = SucceededApiResponseBody(data = null)
+    }
+}
 
 data class FailedApiResponseBody(
     val code: String,
