@@ -9,11 +9,12 @@ class ShortUrlTest {
         private const val ELEMENTS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     }
 
+    @Test
     fun testGenerateByBase62RandomVersion() {
         val length = 7
         val shortUrl = ShortUrl.generateByBase62(length)
         // 실제 길이: length + 1
-        assertEquals(length + 1, shortUrl.length, "Returned string length should be ${length + 1}")
+        assertEquals(length, shortUrl.length, "Returned string length should be ${length + 1}")
 
         // ELEMENTS 문자열에 포함된 문자만 있는지 확인
         for (char in shortUrl) {
@@ -22,15 +23,6 @@ class ShortUrlTest {
                 "Character '$char' should be in the allowed ELEMENTS",
             )
         }
-    }
-
-    @Test
-    fun `test generateByBase62 with origin`() {
-        val length = 7
-        val origin = "example"
-        val shortUrl = ShortUrl.generateByBase62(length, origin)
-        // 현재 구현은 빈 문자열을 리턴하므로 빈 문자열이 반환되는지 확인
-        assertEquals("", shortUrl, "For now, generateByBase62(origin) should return an empty string")
     }
 
     @Test

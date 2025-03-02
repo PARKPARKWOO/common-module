@@ -12,19 +12,10 @@ object ShortUrl {
      */
     fun generateByBase62(length: Int): String {
         val sb = StringBuilder()
-        for (i in 0..length) {
+        for (i in 0 until length) {
             val idx = random.nextInt(ELEMENTS.length)
             sb.append(ELEMENTS[idx])
         }
-        return sb.toString()
-    }
-
-    fun generateByBase62(
-        length: Int,
-        origin: String,
-    ): String {
-        val sb = StringBuilder()
-
         return sb.toString()
     }
 
