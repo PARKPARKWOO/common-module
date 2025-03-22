@@ -14,7 +14,10 @@ version = project.findProperty("version") as String
 dependencies {
     api("io.grpc:grpc-protobuf:$GRPC")
     api("io.grpc:grpc-stub:$GRPC")
-
+    api("io.grpc:grpc-kotlin-stub:1.4.1")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.8.1")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.4")
     if (JavaVersion.current().isJava9Compatible) {
         // Workaround for @javax.annotation.Generated
         // see: https://github.com/grpc/grpc-java/issues/3633
@@ -35,6 +38,9 @@ protobuf {
         id("grpc") {
             artifact = "io.grpc:protoc-gen-grpc-java:$GRPC"
         }
+        id("grpckt") {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.2.0:jdk7@jar"
+        }
     }
     generateProtoTasks {
         ofSourceSet("main").forEach {
@@ -44,6 +50,7 @@ protobuf {
                 // plugin will not be added. This is because of the implicit way
                 // NamedDomainObjectContainer binds the methods.
                 id("grpc") { }
+                id("grpckt") {}
             }
         }
     }

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.grpc.fileupload";
+option java_outer_classname = "FileUploadProto";
+
+package fileupload;
+
+// Unary 방식 (단일 메시지 업로드)
+message FileUploadRequest {
+  string fileName = 1;
+  bytes fileData = 2;
+  int64 applicationId = 3;
+  string uploadedBy = 4;
+  int64 contentLength = 5;
+}
+
+message FileUploadResponse {
+  int64 message = 1;
+}
+
+message FileData {
+  int32 offset = 1;
+  bytes data = 2;
+}
+
+message FileUploadChunk {
+  int64 applicationId = 1;
+  string fileName = 2;
+  int32 pageSize = 3;
+  string uploadedBy = 4;
+  int64 contentLength = 5;
+  int32 chunkSize = 6;
+  FileData fileData = 7;
+}
+
+service FileUploadService {
+  rpc uploadFile(FileUploadRequest) returns (FileUploadResponse);
+
+  rpc uploadFileStream(stream FileUploadChunk) returns (stream FileUploadResponse);
+}
