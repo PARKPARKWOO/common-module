@@ -13,6 +13,7 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -105,34 +106,30 @@ class UploadService(
             val buffer = ByteArray(chunkSize)
             var bytesRead: Int
             val offset = AtomicInteger(0)
+            while (data.read(buffer).also { bytesRead = it } != -1) {
+                // 실제로 읽은 바이트만 포함
+                val actualData =
+                    if (bytesRead < chunkSize) {
+                        buffer.copyOf(bytesRead)
+                    } else {
+                        buffer.clone() // 원본 버퍼 보존을 위해 복제
+                    }
+                val fileData =
+                    FileData
+                        .newBuilder()
+                        .setOffset(offset.getAndIncrement())
+                        .setData(ByteString.copyFrom(actualData))
+                        .build()
 
-            withContext(uploadDispatcher) {
-                while (data.read(buffer).also { bytesRead = it } != -1) {
-                    // 실제로 읽은 바이트만 포함
-                    val actualData =
-                        if (bytesRead < chunkSize) {
-                            buffer.copyOf(bytesRead)
-                        } else {
-                            buffer.clone() // 원본 버퍼 보존을 위해 복제
-                        }
+                val chunk =
+                    baseChunkBuilder
+                        .clone()
+                        .setFileData(fileData)
+                        .build()
 
-                    val fileData =
-                        FileData
-                            .newBuilder()
-                            .setOffset(offset.getAndIncrement()) // 증가 전 값 반환
-                            .setData(ByteString.copyFrom(actualData))
-                            .build()
-
-                    val chunk =
-                        baseChunkBuilder
-                            .clone()
-                            .setFileData(fileData)
-                            .build()
-
-                    emit(chunk)
-                }
+                emit(chunk)
             }
-        }
+        }.flowOn(uploadDispatcher)
 
     private fun handleGrpcException(e: StatusException): Nothing {
         when (e.status.code) {
