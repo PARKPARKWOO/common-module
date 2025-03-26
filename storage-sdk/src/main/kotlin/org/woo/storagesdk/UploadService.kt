@@ -52,7 +52,7 @@ class UploadService(
         uploadedBy: String,
         contentLength: Long,
         chunkSize: Int,
-        applicationId: Long,
+        applicationId: String,
         data: InputStream,
     ): Long {
         // 청크 크기 검증
