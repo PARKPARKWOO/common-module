@@ -9,7 +9,7 @@ interface UploadClient {
         uploadedBy: String,
         contentLength: Long,
         chunkSize: Int,
-        applicationId: Long,
+        applicationId: String,
         data: InputStream,
     ): Long
 }

@@ -10,7 +10,7 @@ package fileupload;
 message FileUploadRequest {
   string fileName = 1;
   bytes fileData = 2;
-  int64 applicationId = 3;
+  string applicationId = 3;
   string uploadedBy = 4;
   int64 contentLength = 5;
 }
@@ -25,7 +25,7 @@ message FileData {
 }
 
 message FileUploadChunk {
-  int64 applicationId = 1;
+  string applicationId = 1;
   string fileName = 2;
   int32 pageSize = 3;
   string uploadedBy = 4;
