@@ -17,4 +17,5 @@ message UserInfoResponse {
   optional string email = 2;
   optional string name = 3;
   string role = 4;
+  string applicationId = 5;
 }
