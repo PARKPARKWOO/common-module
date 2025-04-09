@@ -9,6 +9,7 @@ data class UserContext(
     val userName: String?,
     val email: String?,
     val signInApplicationId: String,
+    val applicationRole: String,
 ) {
     fun getIdIfRequired() = userId!!
 
