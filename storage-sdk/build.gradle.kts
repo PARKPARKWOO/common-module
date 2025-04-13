@@ -1,11 +1,11 @@
+import Version.GRPC
+
 plugins {
     kotlin("jvm") version "1.9.25"
     id("com.google.protobuf") version "0.9.4"
 }
 
 version = project.findProperty("version") as String
-val grpcVersion = "1.63.0"
-val protobufVersion = "3.23.4"
 
 dependencies {
     implementation(project(":grpc"))
@@ -15,8 +15,9 @@ dependencies {
         exclude(group = "io.grpc", module = "grpc-protobuf")
 //        exclude(group = "io.grpc", module = "grpc-")
     }
-    implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+    implementation("io.grpc:grpc-netty-shaded:$GRPC")
     implementation("io.grpc:grpc-kotlin-stub:1.4.1")
+    implementation("io.grpc:grpc-protobuf:$GRPC")
 }
 
 tasks.test {
