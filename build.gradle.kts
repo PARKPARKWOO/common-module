@@ -3,6 +3,10 @@ plugins {
     id("maven-publish")
 }
 
+repositories {
+    mavenCentral()
+}
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "maven-publish")
