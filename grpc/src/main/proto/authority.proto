@@ -16,6 +16,9 @@ service AuthorityService {
 
   rpc UpdateApplicationUserRole(UpdateApplicationUserRoleCommand)
       returns (google.protobuf.Empty);
+
+  rpc GetAuthorityInApplication(google.protobuf.Empty)
+      returns (AuthorityInfoResponse);
 }
 
 // only application admin && super admin
@@ -24,3 +27,10 @@ message UpdateApplicationUserRoleCommand {
   string targetUserId = 2;
   int64 authorityId = 3;
 }
+
+message AuthorityInfoResponse {
+  int64 id = 1;
+  string authority = 2;
+  int32 level = 3;
+}
+
