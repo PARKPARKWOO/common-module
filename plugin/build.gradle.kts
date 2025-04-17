@@ -33,17 +33,9 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/PARKPARKWOO/common-module")
             credentials {
-                username = project.findProperty("gpr.user")?.toString()
-                password = project.findProperty("gpr.key")?.toString()
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
             }
-        }
-    }
-
-    publications {
-        create<MavenPublication>("pluginMaven") {
-            from(components["java"])
-            artifactId = "version-check-gradle-plugin" // artifactId를 명시적으로 설정
-            version = project.version.toString()
         }
     }
 }
