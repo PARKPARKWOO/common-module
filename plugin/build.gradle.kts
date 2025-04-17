@@ -33,8 +33,8 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/PARKPARKWOO/common-module")
             credentials {
-                username = System.getenv("GITHUB_USERNAME")
-                password = System.getenv("GITHUB_TOKEN")
+                username = project.findProperty("gpr.user")?.toString()
+                password = project.findProperty("gpr.key")?.toString()
             }
         }
     }
