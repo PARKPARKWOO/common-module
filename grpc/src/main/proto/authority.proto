@@ -13,4 +13,14 @@ message CreateApplicationAuthorityRequest {
 service AuthorityService {
   rpc CreateApplicationAuthority(CreateApplicationAuthorityRequest)
       returns (google.protobuf.Empty);
+
+  rpc UpdateApplicationUserRole(UpdateApplicationUserRoleCommand)
+      returns (google.protobuf.Empty);
+}
+
+// only application admin && super admin
+message UpdateApplicationUserRoleCommand {
+  string applicationId = 1;
+  string targetUserId = 2;
+  int64 authorityId = 3;
 }
