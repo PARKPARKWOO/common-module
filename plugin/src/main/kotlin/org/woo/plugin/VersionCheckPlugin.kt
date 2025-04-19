@@ -20,14 +20,10 @@ class VersionCheckPlugin : Plugin<Project> {
             it.description =
                 "Checks all projects that depend on org.woo common‑modules and warns if they are not using the latest version."
             val token: String =
-                it.project.findProperty("gpr.key")?.toString() ?: run {
-                    logger.error("토큰이 없습니다")
-                    return@register
-                }
+                it.project.findProperty("gpr.key")?.toString() ?: System.getenv("GITHUB_TOKEN")
 
             it.doLast {
-                // 모든 서브프로젝트(또는 include한 모듈)
-                root.subprojects.forEach { sub ->
+                (listOf(root) + root.subprojects).forEach { sub ->
                     // 'implementation', 'api' 등 의존성 선언이 있는 모든 configuration 탐색
                     sub.configurations
                         .filter { it.isCanBeResolved }
