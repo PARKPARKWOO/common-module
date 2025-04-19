@@ -16,7 +16,7 @@ class VersionCheckPlugin : Plugin<Project> {
 
             it.doLast {
                 val currentVersion = project.version.toString()
-                val latestVersion = fetchLatestVersion(project.group.toString(), project.name)
+                val latestVersion = fetchLatestVersion("org", "woo")
 
                 if (latestVersion == null) {
                     logger.warn("❗ 최신 버전을 조회할 수 없습니다.")
