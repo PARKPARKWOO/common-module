@@ -5,47 +5,79 @@ import okhttp3.Request
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.logging.Logging
 import org.gradle.internal.cc.base.logger
 
 class VersionCheckPlugin : Plugin<Project> {
     override fun apply(root: Project) {
-        val logger = Logging.getLogger(VersionCheckPlugin::class.java)
-
-        // 루트에만 태스크 등록
         if (root != root.rootProject) return
+
+        val logger = Logging.getLogger("VersionCheck")
 
         root.tasks.register("checkCommonModuleDependencies") {
             it.group = "verification"
-            it.description =
-                "Checks all projects that depend on org.woo common‑modules and warns if they are not using the latest version."
+            it.description = "Check org.woo common‑module usage via resolutionResult"
             val token: String =
                 it.project.findProperty("gpr.key")?.toString() ?: System.getenv("GITHUB_TOKEN")
-
             it.doLast {
-                (listOf(root) + root.subprojects).forEach { sub ->
-                    // 'implementation', 'api' 등 의존성 선언이 있는 모든 configuration 탐색
-                    sub.configurations
-                        .filter { it.isCanBeResolved }
-                        .flatMap { config ->
-                            config.dependencies
-                                .filter { dep -> dep.group == "org.woo" }
-                        }.distinctBy { dep -> pairKey(dep) }
-                        .forEach { dep ->
-                            val declared = dep.version
-                            val latest = fetchLatestVersion(token, dep.group!!, dep.name)
-                            if (latest == null) {
-                                logger.warn("⚠️ [${sub.path}] '${dep.group}:${dep.name}' 최신 버전 조회 실패")
-                            } else if (declared != latest) {
-                                logger.warn(
-                                    "⚠️ [${sub.path}] '${dep.name}' 버전 불일치: 선언된=$declared, 최신=$latest",
-                                )
-                            } else {
-                                logger.lifecycle(
-                                    "✅ [${sub.path}] '${dep.name}' 최신 버전 사용 중: $declared",
-                                )
-                            }
+                // 루트 + 서브프로젝트 모두 검사
+                (listOf(root) + root.subprojects).forEach { proj ->
+                    println("🔍 Checking project ${proj.path}")
+
+                    // 1) 모든 resolvable configuration 에 대해 resolutionResult 의존성 가져오기
+                    val deps =
+                        proj.configurations
+                            .filter { it.isCanBeResolved }
+                            .flatMap { conf ->
+                                conf.incoming.resolutionResult.allDependencies
+                            }.filterIsInstance<ResolvedDependencyResult>()
+                            .mapNotNull { dep ->
+                                val id = dep.selected.id
+
+                                when (id) {
+                                    // 프로젝트 간 의존성
+                                    is ProjectComponentIdentifier -> {
+                                        // id.projectPath -> ":domain-auth" 등
+                                        val p = root.findProject(id.projectPath) ?: return@mapNotNull null
+                                        if (p.group == "org.woo") {
+                                            Triple(p.group.toString(), p.name, p.version.toString())
+                                        } else {
+                                            null
+                                        }
+                                    }
+
+                                    // 외부 모듈 (Maven) 의존성
+                                    is ModuleComponentIdentifier -> {
+                                        if (id.group == "org.woo") {
+                                            Triple(id.group, id.module, id.version)
+                                        } else {
+                                            null
+                                        }
+                                    }
+
+                                    else -> null
+                                }
+                            }.distinct() // 중복 제거
+
+                    if (deps.isEmpty()) {
+                        println("   • no org.woo deps in ${proj.path}")
+                        return@forEach
+                    }
+
+                    // 2) 버전 비교
+                    deps.forEach { (g, a, declared) ->
+                        val latest = fetchLatestVersion(token, g, a)
+                        if (latest == null) {
+                            logger.warn("⚠️ [${proj.path}] '$a' 최신버전 조회 실패")
+                        } else if (declared != latest) {
+                            logger.warn("⚠️ [${proj.path}] '$a' 선언=$declared, 최신=$latest")
+                        } else {
+                            logger.lifecycle("✅ [${proj.path}] '$a' 최신 사용중: $declared")
                         }
+                    }
                 }
             }
         }
