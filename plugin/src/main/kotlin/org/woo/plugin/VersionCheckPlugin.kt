@@ -4,57 +4,84 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.logging.Logging
+import org.gradle.internal.cc.base.logger
 
 class VersionCheckPlugin : Plugin<Project> {
-    override fun apply(project: Project) {
+    override fun apply(root: Project) {
         val logger = Logging.getLogger(VersionCheckPlugin::class.java)
 
-        project.tasks.register("checkModuleVersion") {
+        // 루트에만 태스크 등록
+        if (root != root.rootProject) return
+
+        root.tasks.register("checkCommonModuleDependencies") {
             it.group = "verification"
-            it.description = "Checks if module version is up-to-date."
-
-            it.doLast {
-                val currentVersion = project.version.toString()
-                val latestVersion = fetchLatestVersion("org", "woo")
-
-                if (latestVersion == null) {
-                    logger.warn("❗ 최신 버전을 조회할 수 없습니다.")
-                    return@doLast
+            it.description =
+                "Checks all projects that depend on org.woo common‑modules and warns if they are not using the latest version."
+            val token: String =
+                it.project.findProperty("gpr.key")?.toString() ?: run {
+                    logger.error("토큰이 없습니다")
+                    return@register
                 }
 
-                if (currentVersion != latestVersion) {
-                    logger.warn("⚠️ [$latestVersion] 버전이 존재합니다. 현재 사용중인 버전: [$currentVersion]")
-                } else {
-                    logger.lifecycle("✅ 최신 버전 [$currentVersion]을 사용 중입니다.")
+            it.doLast {
+                // 모든 서브프로젝트(또는 include한 모듈)
+                root.subprojects.forEach { sub ->
+                    // 'implementation', 'api' 등 의존성 선언이 있는 모든 configuration 탐색
+                    sub.configurations
+                        .filter { it.isCanBeResolved }
+                        .flatMap { config ->
+                            config.dependencies
+                                .filter { dep -> dep.group == "org.woo" }
+                        }.distinctBy { dep -> pairKey(dep) }
+                        .forEach { dep ->
+                            val declared = dep.version
+                            val latest = fetchLatestVersion(token, dep.group!!, dep.name)
+                            if (latest == null) {
+                                logger.warn("⚠️ [${sub.path}] '${dep.group}:${dep.name}' 최신 버전 조회 실패")
+                            } else if (declared != latest) {
+                                logger.warn(
+                                    "⚠️ [${sub.path}] '${dep.name}' 버전 불일치: 선언된=$declared, 최신=$latest",
+                                )
+                            } else {
+                                logger.lifecycle(
+                                    "✅ [${sub.path}] '${dep.name}' 최신 버전 사용 중: $declared",
+                                )
+                            }
+                        }
                 }
             }
         }
     }
 
+    /** group:name 으로 고유 키 */
+    private fun pairKey(dep: Dependency) = "${dep.group}:${dep.name}"
+
     private fun fetchLatestVersion(
+        token: String,
         groupId: String,
         artifactId: String,
     ): String? {
-        val url =
-            "https://maven.pkg.github.com/PARKPARKWOO/common-module/${groupId.replace('.', '/')}/$artifactId/maven-metadata.xml"
-
+        val path = groupId.replace('.', '/')
+        val url = "https://maven.pkg.github.com/PARKPARKWOO/common-module/$path/$artifactId/maven-metadata.xml"
         val client = OkHttpClient()
         val request =
             Request
                 .Builder()
                 .url(url)
-                .header("Authorization", "Bearer ${System.getenv("GITHUB_TOKEN")}")
+                .header("Authorization", "Bearer $token")
+                .header("Accept", "application/xml")
                 .build()
 
-        return client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
-            val xml = response.body?.string() ?: return null
-            Regex("<latest>(.+)</latest>")
-                .find(xml)
-                ?.groups
-                ?.get(1)
-                ?.value
+        return client.newCall(request).execute().use { resp ->
+            if (!resp.isSuccessful) return null
+            val xml = resp.body?.string().orEmpty()
+            Regex("<latest>([^<]+)</latest>").find(xml)?.groupValues?.get(1)
+                ?: Regex("<version>([^<]+)</version>")
+                    .findAll(xml)
+                    .map { it.groupValues[1] }
+                    .lastOrNull()
         }
     }
 }
