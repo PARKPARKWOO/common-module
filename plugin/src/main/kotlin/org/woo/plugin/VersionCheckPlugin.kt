@@ -71,9 +71,9 @@ class VersionCheckPlugin : Plugin<Project> {
                     deps.forEach { (g, a, declared) ->
                         val latest = fetchLatestVersion(token, g, a)
                         if (latest == null) {
-                            logger.warn("⚠️ [${proj.path}] '$a' 최신버전 조회 실패")
+                            logger.lifecycle("⚠️ [${proj.path}] '$a' 최신버전 조회 실패")
                         } else if (declared != latest) {
-                            logger.warn("⚠️ [${proj.path}] '$a' 선언=$declared, 최신=$latest")
+                            logger.lifecycle("⚠️ [${proj.path}] '$a' 선언=$declared, 최신=$latest")
                         } else {
                             logger.lifecycle("✅ [${proj.path}] '$a' 최신 사용중: $declared")
                         }
