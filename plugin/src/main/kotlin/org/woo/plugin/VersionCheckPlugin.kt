@@ -5,9 +5,7 @@ import okhttp3.Request
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.logging.Logging
 import org.gradle.internal.cc.base.logger
 
@@ -16,66 +14,39 @@ class VersionCheckPlugin : Plugin<Project> {
         if (root != root.rootProject) return
 
         val logger = Logging.getLogger("VersionCheck")
-
         root.tasks.register("checkCommonModuleDependencies") {
             it.group = "verification"
-            it.description = "Check org.woo common‑module usage via resolutionResult"
-            val token: String =
-                it.project.findProperty("gpr.key")?.toString() ?: System.getenv("GITHUB_TOKEN")
+            it.description = "Check declared org.woo common‑module versions"
+
             it.doLast {
-                // 루트 + 서브프로젝트 모두 검사
-                (listOf(root) + root.subprojects).forEach { proj ->
+                root.allprojects.forEach { proj ->
                     println("🔍 Checking project ${proj.path}")
-
-                    // 1) 모든 resolvable configuration 에 대해 resolutionResult 의존성 가져오기
-                    val deps =
+                    val token: String =
+                        it.project.findProperty("gpr.key")?.toString() ?: System.getenv("GITHUB_TOKEN")
+                    // 선언된 버전 읽기
+                    val declaredDeps =
                         proj.configurations
-                            .filter { it.isCanBeResolved }
-                            .flatMap { conf ->
-                                conf.incoming.resolutionResult.allDependencies
-                            }.filterIsInstance<ResolvedDependencyResult>()
-                            .mapNotNull { dep ->
-                                val id = dep.selected.id
+                            .flatMap { conf -> conf.dependencies }
+                            .filterIsInstance<ModuleDependency>()
+                            .filter { it.group == "org.woo" }
+                            .map { Triple(it.group!!, it.name, it.version!!) }
+                            .distinct()
 
-                                when (id) {
-                                    // 프로젝트 간 의존성
-                                    is ProjectComponentIdentifier -> {
-                                        // id.projectPath -> ":domain-auth" 등
-                                        val p = root.findProject(id.projectPath) ?: return@mapNotNull null
-                                        if (p.group == "org.woo") {
-                                            Triple(p.group.toString(), p.name, p.version.toString())
-                                        } else {
-                                            null
-                                        }
-                                    }
-
-                                    // 외부 모듈 (Maven) 의존성
-                                    is ModuleComponentIdentifier -> {
-                                        if (id.group == "org.woo") {
-                                            Triple(id.group, id.module, id.version)
-                                        } else {
-                                            null
-                                        }
-                                    }
-
-                                    else -> null
-                                }
-                            }.distinct() // 중복 제거
-
-                    if (deps.isEmpty()) {
-                        println("   • no org.woo deps in ${proj.path}")
+                    if (declaredDeps.isEmpty()) {
+                        println("   • no org.woo deps")
                         return@forEach
                     }
 
-                    // 2) 버전 비교
-                    deps.forEach { (g, a, declared) ->
+                    // 비교
+                    declaredDeps.forEach { (g, a, declared) ->
                         val latest = fetchLatestVersion(token, g, a)
-                        if (latest == null) {
-                            logger.lifecycle("⚠️ [${proj.path}] '$a' 최신버전 조회 실패")
-                        } else if (declared != latest) {
-                            logger.lifecycle("⚠️ [${proj.path}] '$a' 선언=$declared, 최신=$latest")
-                        } else {
-                            logger.lifecycle("✅ [${proj.path}] '$a' 최신 사용중: $declared")
+                        when {
+                            latest == null ->
+                                logger.lifecycle("⚠️ [${proj.path}] '$a' 최신 조회 실패")
+                            declared == latest ->
+                                logger.lifecycle("✅ [${proj.path}] '$a' 최신 사용중: $declared")
+                            else ->
+                                logger.lifecycle("⚠️ [${proj.path}] '$a' 선언=$declared, 최신=$latest")
                         }
                     }
                 }
