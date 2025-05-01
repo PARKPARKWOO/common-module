@@ -18,7 +18,7 @@ service AuthorityService {
       returns (google.protobuf.Empty);
 
   rpc GetAuthorityInApplication(google.protobuf.Empty)
-      returns (AuthorityInfoResponse);
+      returns (stream AuthorityInfoResponse);
 }
 
 // only application admin && super admin
@@ -33,4 +33,3 @@ message AuthorityInfoResponse {
   string authority = 2;
   int32 level = 3;
 }
-
