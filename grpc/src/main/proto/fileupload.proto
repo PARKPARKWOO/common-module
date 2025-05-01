@@ -31,7 +31,8 @@ message FileUploadChunk {
   string uploadedBy = 4;
   int64 contentLength = 5;
   int32 chunkSize = 6;
-  FileData fileData = 7;
+  int32 accessLevel = 7;
+  FileData fileData = 8;
 }
 
 service FileUploadService {
