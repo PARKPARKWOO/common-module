@@ -1,7 +1,5 @@
 package exception
 
-import jdk.jfr.internal.LogLevel
-
 enum class ErrorCode(
     val message: String,
     val httpCode: Int,
