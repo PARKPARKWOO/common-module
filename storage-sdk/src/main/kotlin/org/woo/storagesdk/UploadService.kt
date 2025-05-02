@@ -54,6 +54,7 @@ class UploadService(
         chunkSize: Int,
         applicationId: String,
         data: InputStream,
+        accessLevel: Int,
     ): Long {
         // 청크 크기 검증
         val effectiveChunkSize =
@@ -76,6 +77,7 @@ class UploadService(
                         .setContentLength(contentLength)
                         .setChunkSize(effectiveChunkSize)
                         .setApplicationId(applicationId)
+                        .setAccessLevel(accessLevel)
                         .setPageSize(pageSize)
 
                 val chunkFlow = createChunkFlow(data, effectiveChunkSize, baseChunkBuilder)

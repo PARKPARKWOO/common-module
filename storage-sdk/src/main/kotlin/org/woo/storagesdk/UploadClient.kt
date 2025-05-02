@@ -3,6 +3,10 @@ package org.woo.storagesdk
 import java.io.InputStream
 
 interface UploadClient {
+    companion object {
+        const val PUBLIC_ACCESS_LEVEL = 0
+    }
+
     // id 값 리턴
     suspend fun uploadStream(
         fileOriginName: String,
@@ -11,5 +15,6 @@ interface UploadClient {
         chunkSize: Int,
         applicationId: String,
         data: InputStream,
+        accessLevel: Int = PUBLIC_ACCESS_LEVEL,
     ): Long
 }
