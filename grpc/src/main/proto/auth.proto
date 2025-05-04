@@ -5,6 +5,7 @@ option java_package = "org.woo.auth.grpc";
 option java_outer_classname = "AuthProto";
 
 service UserInfoService {
+  rpc GetPassportByBearer (google.protobuf.Empty) returns (Passport);
   rpc GetUserInfoByBearer (google.protobuf.Empty) returns (UserInfoResponse);
   rpc GetUserInfoInApplication (UserInfoInApplicationRequest) returns (UserInfoInApplicationPageResponse);
 }
@@ -34,15 +35,15 @@ message UserInfoInApplicationResponse {
 }
 
 message Passport {
-  optional UserInfoResponse userInfo = 1;
+  string id = 1;
+  string role = 2;
+  string applicationId = 3;
+  optional UserInfoResponse userInfo = 4;
 }
 
 message UserInfoResponse {
-  string id = 1;
-  optional string email = 2;
-  optional string name = 3;
-  string role = 4;
-  string applicationId = 5;
-  string applicationRole = 6;
-  int32 accessLevel = 7;
+  optional string email = 1;
+  optional string name = 2;
+  string applicationRole = 3;
+  int32 accessLevel = 4;
 }
