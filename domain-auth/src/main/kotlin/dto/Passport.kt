@@ -3,12 +3,19 @@ package dto
 import model.Role
 import java.util.UUID
 
-data class UserContext(
+// all application level
+data class Passport(
     val userId: UUID,
     val role: Role,
-    val userName: String?,
-    val email: String?,
     val signInApplicationId: String,
+    val userContext: UserContext?,
+)
+
+// specific application level
+data class UserContext(
+    val email: String?,
+    val userName: String?,
+    val role: String,
     val applicationRole: String,
     val accessLevel: Int,
 ) {
