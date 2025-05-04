@@ -11,4 +11,5 @@ enum class ErrorCode(
     REISSUE_JWT_TOKEN_FAILURE("", 401, LogLevel.WARN),
 
     FORBIDDEN("작업을 수행할 권한이 없습니다.", 403, LogLevel.WARN),
+    USER_CONTEXT_NOT_LOADED("user 정보를 가져오는데 실패했습니다.", 401, LogLevel.WARN),
 }
