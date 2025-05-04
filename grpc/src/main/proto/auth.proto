@@ -44,4 +44,5 @@ message UserInfoResponse {
   string role = 4;
   string applicationId = 5;
   string applicationRole = 6;
+  int32 accessLevel = 7;
 }
