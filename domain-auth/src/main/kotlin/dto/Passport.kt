@@ -15,7 +15,6 @@ data class Passport(
 data class UserContext(
     val email: String?,
     val userName: String?,
-    val role: String,
     val applicationRole: String,
     val accessLevel: Int,
 ) {
