@@ -6,8 +6,6 @@ enum class Role {
     ;
 
     companion object {
-        fun from(name: String): Role {
-            return Role.valueOf(name)
-        }
+        fun from(name: String): Role = Role.valueOf(name)
     }
 }
