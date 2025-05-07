@@ -1,7 +1,7 @@
 package org.woo.event.api
 
 data class InternalApiCallEvent(
-    val service: InternalService,
+    val serviceName: String,
     val path: String,
     val statusCode: Int,
     val timestamp: Long,
