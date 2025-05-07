@@ -1,5 +1,6 @@
 package org.woo.storagesdk
 
+import io.grpc.ClientInterceptor
 import java.io.InputStream
 
 interface UploadClient {
@@ -16,5 +17,6 @@ interface UploadClient {
         applicationId: String,
         data: InputStream,
         accessLevel: Int = PUBLIC_ACCESS_LEVEL,
+        vararg interceptors: ClientInterceptor = emptyArray(),
     ): Long
 }
