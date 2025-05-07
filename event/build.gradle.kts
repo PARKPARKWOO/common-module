@@ -5,4 +5,5 @@ plugins {
 version = project.findProperty("version") as String
 
 dependencies {
+//    implementation(project(":mapper"))
 }
