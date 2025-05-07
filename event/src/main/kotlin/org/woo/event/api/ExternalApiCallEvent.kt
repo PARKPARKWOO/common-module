@@ -1,7 +1,8 @@
 package org.woo.event.api
 
 data class ExternalApiCallEvent(
-    val uri: String,
+    val baseUrl: String,
+    val path: String,
     val method: String,
     val isSuccess: Boolean,
     val statusCode: Int,
