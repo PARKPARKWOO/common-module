@@ -7,5 +7,6 @@ data class InternalApiCallEvent(
     val errorMessage: String?,
     val durationMs: Long,
 ) {
-    fun getTopic(): String = ApiEventConstants.INTERNAL_API_CALL_TOPIC
+    val topic: String
+        get() = ApiEventConstants.INTERNAL_API_CALL_TOPIC
 }
