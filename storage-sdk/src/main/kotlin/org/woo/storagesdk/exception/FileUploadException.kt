@@ -1,4 +1,4 @@
-package org.woo.storagesdk
+package org.woo.storagesdk.exception
 
 open class FileUploadException(
     override val message: String,
