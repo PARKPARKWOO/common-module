@@ -10,5 +10,6 @@ data class ExternalApiCallEvent(
     val errorMessage: String?,
     val durationMs: Long,
 ) {
-    fun getTopic(): String = ApiEventConstants.EXTERNAL_API_CALL_TOPIC
+    val topic: String
+        get() = ApiEventConstants.EXTERNAL_API_CALL_TOPIC
 }
