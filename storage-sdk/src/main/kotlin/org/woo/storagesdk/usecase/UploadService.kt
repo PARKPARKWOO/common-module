@@ -34,7 +34,7 @@ import kotlin.math.ceil
 class UploadService(
     private val stub: FileUploadServiceGrpcKt.FileUploadServiceCoroutineStub,
     private val cpuCore: Int = DEFAULT_CORE_SIZE,
-    private val interceptors: List<UploadInterceptor>,
+    private val uploadInterceptors: List<UploadInterceptor>,
 ) : UploadClient {
     companion object {
         private const val MAX_CHUNK_SIZE = 4000_000L
@@ -75,8 +75,8 @@ class UploadService(
                 else -> chunkSize
             }
         val finalStreams =
-            interceptors.fold(data) { acc, interceptor ->
-                interceptor.call(acc, fileOriginName)
+            uploadInterceptors.fold(data) { acc, uploadInterceptor ->
+                uploadInterceptor.call(acc, fileOriginName)
             }
         // 총 페이지 수 계산
         val pageSize = ceil(contentLength.toDouble() / effectiveChunkSize).toInt()
