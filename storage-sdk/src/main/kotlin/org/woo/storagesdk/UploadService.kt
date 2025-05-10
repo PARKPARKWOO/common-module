@@ -4,6 +4,7 @@ import com.example.grpc.fileupload.FileData
 import com.example.grpc.fileupload.FileUploadChunk
 import com.example.grpc.fileupload.FileUploadServiceGrpcKt
 import com.google.protobuf.ByteString
+import io.grpc.ClientInterceptor
 import io.grpc.Status
 import io.grpc.StatusException
 import jakarta.annotation.PostConstruct
@@ -55,6 +56,7 @@ class UploadService(
         applicationId: String,
         data: InputStream,
         accessLevel: Int,
+        vararg interceptors: ClientInterceptor,
     ): Long {
         // 청크 크기 검증
         val effectiveChunkSize =
@@ -81,9 +83,17 @@ class UploadService(
                         .setPageSize(pageSize)
 
                 val chunkFlow = createChunkFlow(data, effectiveChunkSize, baseChunkBuilder)
-
+                val stubWithInterceptors =
+                    if (interceptors.isNotEmpty()) {
+                        stub.withInterceptors(*interceptors)
+                    } else {
+                        stub
+                    }
                 // 파일 청크 스트림 전송 및 응답 처리
-                val response = stub.uploadFileStream(chunkFlow).last()
+                val response =
+                    stubWithInterceptors
+                        .uploadFileStream(chunkFlow)
+                        .last()
                 response.message
             } catch (e: StatusException) {
                 handleGrpcException(e)
