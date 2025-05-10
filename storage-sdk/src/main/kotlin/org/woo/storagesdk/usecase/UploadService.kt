@@ -94,13 +94,14 @@ class UploadService(
                         .setAccessLevel(accessLevel)
                         .setPageSize(pageSize)
 
-                val chunkFlow = createChunkFlow(data, effectiveChunkSize, baseChunkBuilder)
                 val stubWithInterceptors =
                     if (interceptors.isNotEmpty()) {
                         stub.withInterceptors(*interceptors)
                     } else {
                         stub
                     }
+                val chunkFlow = createChunkFlow(finalStreams, effectiveChunkSize, baseChunkBuilder)
+
                 // 파일 청크 스트림 전송 및 응답 처리
                 val response =
                     stubWithInterceptors
