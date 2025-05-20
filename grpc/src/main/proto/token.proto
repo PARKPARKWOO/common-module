@@ -1,0 +1,22 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+option java_package = "org.woo.auth.grpc";
+option java_outer_classname = "TokenProto";
+
+service TokenService {
+  rpc reissueToken(ReissueTokenRequest) returns (JwtTokenResponse);
+}
+
+message ReissueTokenRequest {
+  string idempotentKey = 1;
+  string refreshToken = 2;
+}
+
+// RFC 6819  Refresh Token Rotation
+message JwtTokenResponse {
+  string accessToken = 1;
+  string refreshToken = 2;
+  int64 accessTokenExpiresIn = 3;
+  int64 refreshTokenExpiresIn = 4;
+}
