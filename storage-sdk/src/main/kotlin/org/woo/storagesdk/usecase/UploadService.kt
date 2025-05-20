@@ -1,4 +1,4 @@
-package org.woo.storagesdk
+package org.woo.storagesdk.usecase
 
 import com.example.grpc.fileupload.FileData
 import com.example.grpc.fileupload.FileUploadChunk
@@ -17,6 +17,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.withContext
+import org.woo.storagesdk.exception.FileUploadException
+import org.woo.storagesdk.exception.InvalidArgumentException
+import org.woo.storagesdk.exception.MaxChunkSizeExceededException
+import org.woo.storagesdk.exception.PermissionDeniedException
+import org.woo.storagesdk.exception.ResourceExhaustedException
+import org.woo.storagesdk.exception.ServiceUnavailableException
+import org.woo.storagesdk.exception.TimeoutException
+import org.woo.storagesdk.interceptor.UploadInterceptor
 import java.io.InputStream
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -26,6 +34,7 @@ import kotlin.math.ceil
 class UploadService(
     private val stub: FileUploadServiceGrpcKt.FileUploadServiceCoroutineStub,
     private val cpuCore: Int = DEFAULT_CORE_SIZE,
+    private val uploadInterceptors: List<UploadInterceptor>,
 ) : UploadClient {
     companion object {
         private const val MAX_CHUNK_SIZE = 4000_000L
@@ -65,7 +74,10 @@ class UploadService(
                 chunkSize > MAX_CHUNK_SIZE -> throw MaxChunkSizeExceededException("최대 청크 크기는 ${MAX_CHUNK_SIZE}입니다.")
                 else -> chunkSize
             }
-
+        val finalStreams =
+            uploadInterceptors.fold(data) { acc, uploadInterceptor ->
+                uploadInterceptor.call(acc, fileOriginName)
+            }
         // 총 페이지 수 계산
         val pageSize = ceil(contentLength.toDouble() / effectiveChunkSize).toInt()
 
@@ -82,13 +94,14 @@ class UploadService(
                         .setAccessLevel(accessLevel)
                         .setPageSize(pageSize)
 
-                val chunkFlow = createChunkFlow(data, effectiveChunkSize, baseChunkBuilder)
                 val stubWithInterceptors =
                     if (interceptors.isNotEmpty()) {
                         stub.withInterceptors(*interceptors)
                     } else {
                         stub
                     }
+                val chunkFlow = createChunkFlow(finalStreams, effectiveChunkSize, baseChunkBuilder)
+
                 // 파일 청크 스트림 전송 및 응답 처리
                 val response =
                     stubWithInterceptors

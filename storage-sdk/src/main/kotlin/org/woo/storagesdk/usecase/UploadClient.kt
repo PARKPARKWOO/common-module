@@ -1,4 +1,4 @@
-package org.woo.storagesdk
+package org.woo.storagesdk.usecase
 
 import io.grpc.ClientInterceptor
 import java.io.InputStream
