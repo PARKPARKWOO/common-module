@@ -12,6 +12,7 @@ plugins {
 version = project.findProperty("version") as String
 
 dependencies {
+    api(project(":http"))
     api("io.grpc:grpc-protobuf:$GRPC")
     api("io.grpc:grpc-stub:$GRPC")
     api("io.grpc:grpc-kotlin-stub:1.4.1")
