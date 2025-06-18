@@ -1,4 +1,4 @@
-package org.woo.grpc
+package org.woo.grpc.interceptor
 
 import io.grpc.CallOptions
 import io.grpc.Channel
@@ -7,13 +7,14 @@ import io.grpc.ClientInterceptor
 import io.grpc.ForwardingClientCall
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
+import org.woo.grpc.circuitbreaker.GrpcCircuitBreaker
 
-class TokenInitializeInMetadata(
-    val accessToken: String,
+class CircuitBreakerInterceptor(
+    private val grpcCircuitBreaker: GrpcCircuitBreaker,
 ) : ClientInterceptor {
     override fun <ReqT : Any?, RespT : Any?> interceptCall(
-        p0: MethodDescriptor<ReqT, RespT>?,
-        p1: CallOptions?,
+        p0: MethodDescriptor<ReqT, RespT>,
+        p1: CallOptions,
         p2: Channel,
     ): ClientCall<ReqT, RespT> =
         object : ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(p2.newCall(p0, p1)) {
@@ -21,9 +22,10 @@ class TokenInitializeInMetadata(
                 responseListener: Listener<RespT>?,
                 headers: Metadata?,
             ) {
-                headers?.put(AuthMetadata.AUTHORIZATION_METADATA_KEY, "Bearer $accessToken")
-                    ?: Metadata().apply { put(AuthMetadata.AUTHORIZATION_METADATA_KEY, "Bearer $accessToken") }
-                super.start(responseListener, headers)
+                val serviceName = p0.bareMethodName
+                grpcCircuitBreaker.requireCircuitClosed(serviceName!!) {
+                    super.start(responseListener, headers)
+                }
             }
         }
 }
