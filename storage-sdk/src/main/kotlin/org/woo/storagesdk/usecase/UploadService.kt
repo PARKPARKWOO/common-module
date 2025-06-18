@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.withContext
+import org.woo.grpc.circuitbreaker.GrpcCircuitBreaker
+import org.woo.grpc.circuitbreaker.ServiceStateRegistry
 import org.woo.storagesdk.exception.FileUploadException
 import org.woo.storagesdk.exception.InvalidArgumentException
 import org.woo.storagesdk.exception.MaxChunkSizeExceededException
@@ -35,11 +37,13 @@ class UploadService(
     private val stub: FileUploadServiceGrpcKt.FileUploadServiceCoroutineStub,
     private val cpuCore: Int = DEFAULT_CORE_SIZE,
     private val uploadInterceptors: List<UploadInterceptor>,
+    private val circuitBreaker: GrpcCircuitBreaker,
 ) : UploadClient {
     companion object {
         private const val MAX_CHUNK_SIZE = 4000_000L
         private const val DEFAULT_BUFFER_SIZE = 8192
         private const val DEFAULT_CORE_SIZE = 4
+        private const val UPLOAD_STREAM_METHOD_NAME = "uploadFileStream"
     }
 
     private val ioDispatcher = Dispatchers.IO
@@ -49,6 +53,7 @@ class UploadService(
     @PostConstruct
     fun init() {
         uploadDispatcher = Executors.newFixedThreadPool(cpuCore).asCoroutineDispatcher()
+        ServiceStateRegistry.initGrpcService(FileUploadServiceGrpcKt.serviceDescriptor)
     }
 
     @PreDestroy
@@ -67,6 +72,7 @@ class UploadService(
         accessLevel: Int,
         vararg interceptors: ClientInterceptor,
     ): Long {
+        circuitBreaker.checkCircuitBreaker(UPLOAD_STREAM_METHOD_NAME)
         // 청크 크기 검증
         val effectiveChunkSize =
             when {
