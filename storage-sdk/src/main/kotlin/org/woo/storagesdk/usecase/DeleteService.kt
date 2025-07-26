@@ -3,7 +3,7 @@ package org.woo.storagesdk.usecase
 import com.example.grpc.filedelete.DeleteFileRequest
 import com.example.grpc.filedelete.FileDeleteServiceGrpcKt
 import io.grpc.ClientInterceptor
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.woo.grpc.circuitbreaker.GrpcCircuitBreaker
@@ -12,7 +12,7 @@ import org.woo.grpc.circuitbreaker.ServiceStateRegistry
 class DeleteService(
     private val stub: FileDeleteServiceGrpcKt.FileDeleteServiceCoroutineStub,
     private val circuitBreaker: GrpcCircuitBreaker,
-    private val dispatcher: ExecutorCoroutineDispatcher,
+    private val dispatcher: CoroutineDispatcher,
 ) : DeleteClient {
     companion object {
         private const val DELETE_SERVICE_NAME = "delete"
