@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "com.example.grpc.filedelete";
+option java_outer_classname = "FileDeleteProto";
+
+package filedelete;
+
+message DeleteFileRequest {
+  int64 id = 1;
+}
+
+service FileDeleteService {
+  rpc delete(DeleteFileRequest) returns (google.protobuf.Empty);
+}
