@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 option java_multiple_files = true;
 option java_package = "com.example.grpc.fileupload";
 option java_outer_classname = "FileUploadProto";
@@ -39,4 +41,89 @@ service FileUploadService {
   rpc uploadFile(FileUploadRequest) returns (FileUploadResponse);
 
   rpc uploadFileStream(stream FileUploadChunk) returns (stream FileUploadResponse);
+}
+
+// [공통 개선] 업로드 대상 파일의 명세를 정의한 공통 메시지
+// Presigned URL 생성과 gRPC 스트리밍 업로드에서 재사용됩니다.
+message FileUploadSpec {
+  // MinIO 버킷 이름.
+  // [검증] 서버는 요청한 사용자가 이 버킷에 접근할 권한이 있는지 확인해야 합니다.
+  string bucket = 1;
+
+  // 저장될 객체의 전체 경로 및 파일명 (예: "users/123/avatar.png").
+  // [보안] 서버는 요청한 사용자가 이 경로에 파일을 쓸(write) 권한이 있는지 반드시 확인해야 합니다.
+  string object_key = 2;
+
+  // 업로드 시 사용할 Content-Type (예: "image/png", "application/pdf").
+  // [검증] 서버는 허용된 Content-Type 목록(whitelist)과 일치하는지 검증할 수 있습니다.
+  string content_type = 3;
+
+  // 선택: 다운로드 시 파일명을 지정하기 위한 Content-Disposition 헤더 값.
+  string content_disposition = 4;
+
+  // 선택: x-amz-meta-* 헤더로 전달될 사용자 정의 메타데이터.
+  map<string, string> metadata = 5;
+}
+
+
+// -------- Presigned Upload (S3 PUT) --------
+message GetPresignedUploadUrlRequest {
+  FileUploadSpec spec = 1;
+
+  // 선택: 업로드할 파일의 고정 크기(bytes).
+  // [검증] 서버는 이 값이 시스템 최대 허용치(예: 1GB)를 초과하지 않는지 확인해야 합니다.
+  int64 content_length = 2;
+
+  // URL의 만료 시간(초).
+  // [검증] 서버는 이 값이 시스템 최대 허용치(예: 3600초)를 초과하지 않도록 강제해야 합니다.
+  int32 expiry_seconds = 3;
+
+  // 선택: Body 체크섬 (Base64 인코딩된 SHA256).
+  string checksum_sha256_base64 = 4;
+
+  // 선택: 멱등성 키.
+  string idempotency_key = 5;
+}
+
+message GetPresignedUploadUrlResponse {
+  string url = 1;
+  map<string, string> required_headers = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+// -------- Presigned Download (S3 GET) --------
+message GetPresignedDownloadUrlRequest {
+  string bucket = 1;
+  string object_key = 2;
+  int32 expiry_seconds = 3;
+  string response_content_type = 4;
+  string response_content_disposition = 5;
+}
+
+message GetPresignedDownloadUrlResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// -------- gRPC 스트리밍 업로드(서버가 MinIO로 저장) --------
+message UploadFileRequest {
+  oneof payload {
+    // [규약] 스트림의 첫 번째 메시지는 반드시 header여야 합니다.
+    FileUploadSpec header = 1;
+    // [안정성] 서버는 전체 스트림의 총 크기 제한 및 타임아웃을 강제해야 합니다.
+    bytes chunk = 2;
+  }
+}
+
+message UploadFileResponse {
+  string bucket = 1;
+  string object_key = 2;
+  int64  size = 3;
+  string etag = 4;
+}
+
+service StorageService {
+  rpc GetPresignedUploadUrl (GetPresignedUploadUrlRequest) returns (GetPresignedUploadUrlResponse);
+  rpc GetPresignedDownloadUrl (GetPresignedDownloadUrlRequest) returns (GetPresignedDownloadUrlResponse);
+  rpc UploadFile (stream UploadFileRequest) returns (UploadFileResponse);
 }
