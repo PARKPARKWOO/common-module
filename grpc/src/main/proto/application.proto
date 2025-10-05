@@ -12,5 +12,5 @@ message ApplicationInfoResponse {
 }
 
 service ApplicationService {
-  rpc getInfo(google.protobuf.Empty) returns (ApplicationInfoResponse);
+  rpc getApplications(google.protobuf.Empty) returns (stream ApplicationInfoResponse);
 }
