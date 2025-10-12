@@ -3,6 +3,10 @@ package org.woo.storagesdk.usecase
 import com.example.grpc.fileupload.FileData
 import com.example.grpc.fileupload.FileUploadChunk
 import com.example.grpc.fileupload.FileUploadServiceGrpcKt
+import com.example.grpc.fileupload.FileUploadSpec
+import com.example.grpc.fileupload.GetPresignedDownloadUrlRequest
+import com.example.grpc.fileupload.GetPresignedUploadUrlRequest
+import com.example.grpc.fileupload.StorageServiceGrpcKt
 import com.google.protobuf.ByteString
 import io.grpc.ClientInterceptor
 import io.grpc.Status
@@ -28,17 +32,19 @@ import org.woo.storagesdk.exception.ServiceUnavailableException
 import org.woo.storagesdk.exception.TimeoutException
 import org.woo.storagesdk.interceptor.UploadInterceptor
 import java.io.InputStream
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.jvm.Throws
 import kotlin.math.ceil
 
-class UploadService(
-    private val stub: FileUploadServiceGrpcKt.FileUploadServiceCoroutineStub,
+class StorageService(
+    private val uploadStubToCassandra: FileUploadServiceGrpcKt.FileUploadServiceCoroutineStub? = null,
+    private val uploadStubToMinio: StorageServiceGrpcKt.StorageServiceCoroutineStub? = null,
     private val cpuCore: Int = DEFAULT_CORE_SIZE,
     private val uploadInterceptors: List<UploadInterceptor>,
     private val circuitBreaker: GrpcCircuitBreaker,
-) : UploadClient {
+) : StorageClient {
     companion object {
         private const val MAX_CHUNK_SIZE = 4000_000L
         private const val DEFAULT_BUFFER_SIZE = 8192
@@ -72,6 +78,9 @@ class UploadService(
         accessLevel: Int,
         vararg interceptors: ClientInterceptor,
     ): Long {
+        if (uploadStubToCassandra == null) {
+            throw IllegalArgumentException("cassandra stub is null")
+        }
         circuitBreaker.checkCircuitBreaker(UPLOAD_STREAM_METHOD_NAME)
         // 청크 크기 검증
         val effectiveChunkSize =
@@ -102,9 +111,9 @@ class UploadService(
 
                 val stubWithInterceptors =
                     if (interceptors.isNotEmpty()) {
-                        stub.withInterceptors(*interceptors)
+                        uploadStubToCassandra.withInterceptors(*interceptors)
                     } else {
-                        stub
+                        uploadStubToCassandra
                     }
                 val chunkFlow = createChunkFlow(finalStreams, effectiveChunkSize, baseChunkBuilder)
 
@@ -171,5 +180,82 @@ class UploadService(
             Status.Code.PERMISSION_DENIED -> throw PermissionDeniedException("권한 없음: ${e.message}")
             else -> throw FileUploadException("파일 업로드 실패: ${e.status.code} - ${e.message}")
         }
+    }
+
+    override suspend fun getUploadPresignUrl(
+        applicationId: String,
+        expiry: Int,
+        objectKey: String,
+        fileLength: Long?,
+        contentType: String,
+    ): String {
+        require(uploadStubToMinio != null) { "minio stub is null" }
+
+        val spec =
+            FileUploadSpec
+                .newBuilder()
+                .setBucket(applicationId)
+                .setObjectKey(objectKey) // ex) "apps/$applicationId/${UUID.randomUUID()}.png"
+                .setContentType(contentType) // ex) "image/png"
+                .build()
+
+        val req =
+            GetPresignedUploadUrlRequest
+                .newBuilder()
+                .setSpec(spec)
+                .apply { if (fileLength != null && fileLength > 0) setContentLength(fileLength) }
+                .setIdempotencyKey(UUID.randomUUID().toString()) // 같은 파일 재시도에 유용
+                .setExpirySeconds(expiry) // ex) 600
+                // .setChecksumSha256Base64(checksumBase64)      // 무결성 쓰려면 사용
+                .build()
+
+        val response = uploadStubToMinio.getPresignedUploadUrl(req)
+        return response.url
+    }
+
+    override suspend fun getDownloadPresignedUrl(
+        bucket: String,
+        objectKey: String,
+        expirySeconds: Int,
+        responseContentType: String?,
+        responseContentDisposition: String?,
+    ): String {
+        require(uploadStubToMinio != null) { "minio stub is null" }
+
+        val request =
+            GetPresignedDownloadUrlRequest
+                .newBuilder()
+                .setBucket(bucket)
+                .setObjectKey(objectKey)
+                .setExpirySeconds(expirySeconds)
+                .setResponseContentType(responseContentType)
+                .setResponseContentDisposition(responseContentDisposition)
+                .build()
+        return uploadStubToMinio.getPresignedDownloadUrl(request).url
+    }
+
+    private fun canonicalContentTypeFromExt(ext: String): String? =
+        when (ext.lowercase()) {
+            ".jpg", ".jpeg" -> "image/jpeg"
+            ".png" -> "image/png"
+            ".gif" -> "image/gif"
+            ".webp" -> "image/webp"
+            ".heic", ".heif" -> "image/heic"
+            ".pdf" -> "application/pdf"
+            ".zip" -> "application/zip"
+            ".mp4" -> "video/mp4"
+            ".webm" -> "video/webm"
+            ".mp3" -> "audio/mpeg"
+            ".wav", ".wave" -> "audio/wav"
+            else -> null
+        }
+
+    private fun String.safeObjectKey(): String {
+        // 앞 슬래시 금지, 경로 역참조 금지, 허용문자만
+        require(!startsWith("/")) { "objectKey must not start with '/'" }
+        require(!contains("..")) { "objectKey must not contain '..'" }
+        require(Regex("^[A-Za-z0-9!._\\-~/]+$").matches(this)) { "objectKey contains illegal chars" }
+        // 중복 슬래시 정리
+        return replace(Regex("/{2,}"), "/")
     }
 }
