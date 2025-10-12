@@ -6,6 +6,7 @@ option java_outer_classname = "TokenProto";
 
 service TokenService {
   rpc reissueToken(ReissueTokenRequest) returns (JwtTokenResponse);
+  rpc RevokeToken(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message ReissueTokenRequest {
