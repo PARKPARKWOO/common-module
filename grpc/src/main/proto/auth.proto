@@ -8,6 +8,7 @@ service UserInfoService {
   rpc GetPassportByBearer (google.protobuf.Empty) returns (Passport);
   rpc GetUserInfoByBearer (google.protobuf.Empty) returns (UserInfoResponse);
   rpc GetUserInfoInApplication (UserInfoInApplicationRequest) returns (UserInfoInApplicationPageResponse);
+  rpc RevokeToken(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message UserInfoInApplicationRequest {
