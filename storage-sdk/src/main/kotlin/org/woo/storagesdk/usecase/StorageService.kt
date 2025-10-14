@@ -243,41 +243,68 @@ class StorageService(
         vararg interceptors: ClientInterceptor,
     ): MinioUploadResponse {
         require(uploadStubToMinio != null) { "minio stub is null" }
-        val request =
+
+        val stub =
+            uploadStubToMinio!!
+                .withInterceptors(*interceptors)
+        // .withCallCredentials(Bearer(jwt)) // 필요 시
+        // .withDeadlineAfter(60, TimeUnit.SECONDS) // 옵션
+
+        val headerBuilder =
+            FileUploadSpec
+                .newBuilder()
+                .setBucket(spec.header.applicationId)
+                .setUploadedBy(spec.header.uploadedBy)
+                .setObjectKey(spec.header.objectKey)
+                .setContentType(spec.header.contentType ?: "application/octet-stream")
+
+        spec.header.contentDisposition?.takeIf { it.isNotBlank() }?.let {
+            headerBuilder.setContentDisposition(it)
+        }
+
+        spec.header.metadata?.forEach { (k, v) -> headerBuilder.putMetadata(k, v) }
+
+        val chunkSize = 64 * 1024 // 64KB (서버가 MinIO로 단일 스트림 put이면 충분)
+        val maxBytes = spec.header.contentLength.takeIf { it > 0 } // 선택: 상한
+
+        val requestFlow =
             flow {
-                val header =
-                    FileUploadSpec
-                        .newBuilder()
-                        .setBucket(spec.header.applicationId)
-                        .setObjectKey(spec.header.objectKey)
-                        .setContentType(spec.header.contentType ?: "application/octet-stream")
-                        .setContentDisposition(spec.header.contentDisposition ?: "")
-                        .build()
-                emit(UploadFileRequest.newBuilder().setHeader(header).build())
+                emit(UploadFileRequest.newBuilder().setHeader(headerBuilder.build()).build())
+                var sent = 0L
+                val buf = ByteArray(chunkSize)
 
-                val chunkSize = 64 * 1024 // 64KB
-
-                val buffer = ByteArray(chunkSize)
-                var bytesRead: Int
-                while (spec.data.read(buffer).also { bytesRead = it } != -1) {
-                    // 실제로 읽은 바이트만 포함
-                    val actualData =
-                        if (bytesRead < chunkSize) {
-                            buffer.copyOf(bytesRead)
+                spec.data.use { input ->
+                    while (true) {
+                        if (maxBytes != null && sent >= maxBytes) break
+                        val read = input.read(buf)
+                        if (read == -1) break
+                        if (maxBytes != null && sent + read > maxBytes) {
+                            // 상한 초과 방지: 초과분 잘라내기
+                            val allow = (maxBytes - sent).toInt()
+                            if (allow <= 0) break
+                            emit(
+                                UploadFileRequest
+                                    .newBuilder()
+                                    .setChunk(ByteString.copyFrom(buf, 0, allow))
+                                    .build(),
+                            )
+                            sent += allow
+                            break
                         } else {
-                            buffer.clone() // 원본 버퍼 보존을 위해 복제
+                            emit(
+                                UploadFileRequest
+                                    .newBuilder()
+                                    .setChunk(ByteString.copyFrom(buf, 0, read))
+                                    .build(),
+                            )
+                            sent += read
                         }
-
-                    emit(
-                        UploadFileRequest
-                            .newBuilder()
-                            .setChunk(ByteString.copyFrom(actualData))
-                            .build(),
-                    )
+                    }
                 }
+                // (옵션) sent < required 최소 크기면 INVALID_ARGUMENT로 실패 유도 가능
             }.flowOn(uploadDispatcher)
 
-        val response = uploadStubToMinio.uploadFile(request)
+        val response = uploadStubToMinio.uploadFile(requestFlow)
         return MinioUploadResponse(
             bucket = response.bucket,
             objectKey = response.objectKey,
