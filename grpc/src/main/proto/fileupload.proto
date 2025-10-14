@@ -63,6 +63,9 @@ message FileUploadSpec {
 
   // 선택: x-amz-meta-* 헤더로 전달될 사용자 정의 메타데이터.
   map<string, string> metadata = 5;
+
+  string uploaded_by = 6;
+  string application_id = 7;
 }
 
 
@@ -98,6 +101,8 @@ message GetPresignedDownloadUrlRequest {
   int32 expiry_seconds = 3;
   string response_content_type = 4;
   string response_content_disposition = 5;
+  string user_id = 6;
+  string application_id = 7;
 }
 
 message GetPresignedDownloadUrlResponse {
