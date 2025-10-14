@@ -255,10 +255,13 @@ class StorageService(
                         .build()
                 emit(UploadFileRequest.newBuilder().setHeader(header).build())
 
-                val buf = ByteArray(spec.header.contentLength)
-                while (true) {
+                val chunkSize = 64 * 1024 // 64KB
+                val buf = ByteArray(chunkSize)
+                var totalRead = 0L
+                while (totalRead < spec.header.contentLength) {
                     val read = spec.data.read(buf)
                     if (read <= 0) break
+                    totalRead += read
                     emit(
                         UploadFileRequest
                             .newBuilder()
