@@ -250,8 +250,8 @@ class StorageService(
                         .newBuilder()
                         .setBucket(spec.header.applicationId)
                         .setObjectKey(spec.header.objectKey)
-                        .setContentType(spec.header.contentType)
-                        .setContentDisposition(spec.header.contentDisposition)
+                        .setContentType(spec.header.contentType ?: "application/octet-stream")
+                        .setContentDisposition(spec.header.contentDisposition ?: "")
                         .build()
                 emit(UploadFileRequest.newBuilder().setHeader(header).build())
 

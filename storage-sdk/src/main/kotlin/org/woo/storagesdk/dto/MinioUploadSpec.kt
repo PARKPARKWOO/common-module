@@ -9,10 +9,10 @@ data class MinioUploadSpec(
 
 data class MinioUploadHeader(
     val objectKey: String,
-    val contentType: String?,
-    val contentDisposition: String?,
+    val contentType: String? = null,
+    val contentDisposition: String? = null,
     val contentLength: Int,
-    val metadata: Map<String, String>?,
+    val metadata: Map<String, String>? = null,
     val uploadedBy: String,
     val applicationId: String,
 )
