@@ -256,8 +256,6 @@ class StorageService(
                 emit(UploadFileRequest.newBuilder().setHeader(header).build())
 
                 val chunkSize = 64 * 1024 // 64KB
-                val buf = ByteArray(chunkSize)
-                var totalRead = 0L
 
                 val buffer = ByteArray(chunkSize)
                 var bytesRead: Int
@@ -276,11 +274,6 @@ class StorageService(
                             .setChunk(ByteString.copyFrom(actualData))
                             .build(),
                     )
-                }
-                while (totalRead < spec.header.contentLength) {
-                    val read = spec.data.read(buf)
-                    if (read <= 0) break
-                    totalRead += read
                 }
             }.flowOn(uploadDispatcher)
 
