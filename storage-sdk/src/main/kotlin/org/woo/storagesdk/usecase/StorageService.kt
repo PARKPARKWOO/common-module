@@ -258,16 +258,29 @@ class StorageService(
                 val chunkSize = 64 * 1024 // 64KB
                 val buf = ByteArray(chunkSize)
                 var totalRead = 0L
+
+                val buffer = ByteArray(chunkSize)
+                var bytesRead: Int
+                while (spec.data.read(buffer).also { bytesRead = it } != -1) {
+                    // 실제로 읽은 바이트만 포함
+                    val actualData =
+                        if (bytesRead < chunkSize) {
+                            buffer.copyOf(bytesRead)
+                        } else {
+                            buffer.clone() // 원본 버퍼 보존을 위해 복제
+                        }
+
+                    emit(
+                        UploadFileRequest
+                            .newBuilder()
+                            .setChunk(ByteString.copyFrom(actualData))
+                            .build(),
+                    )
+                }
                 while (totalRead < spec.header.contentLength) {
                     val read = spec.data.read(buf)
                     if (read <= 0) break
                     totalRead += read
-                    emit(
-                        UploadFileRequest
-                            .newBuilder()
-                            .setChunk(ByteString.copyFrom(buf, 0, read))
-                            .build(),
-                    )
                 }
             }.flowOn(uploadDispatcher)
 
