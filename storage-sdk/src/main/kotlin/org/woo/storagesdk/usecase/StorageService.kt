@@ -7,6 +7,7 @@ import com.example.grpc.fileupload.FileUploadSpec
 import com.example.grpc.fileupload.GetPresignedDownloadUrlRequest
 import com.example.grpc.fileupload.GetPresignedUploadUrlRequest
 import com.example.grpc.fileupload.StorageServiceGrpcKt
+import com.example.grpc.fileupload.UploadFileRequest
 import com.google.protobuf.ByteString
 import io.grpc.ClientInterceptor
 import io.grpc.Status
@@ -23,6 +24,8 @@ import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.withContext
 import org.woo.grpc.circuitbreaker.GrpcCircuitBreaker
 import org.woo.grpc.circuitbreaker.ServiceStateRegistry
+import org.woo.storagesdk.dto.MinioUploadResponse
+import org.woo.storagesdk.dto.MinioUploadSpec
 import org.woo.storagesdk.exception.FileUploadException
 import org.woo.storagesdk.exception.InvalidArgumentException
 import org.woo.storagesdk.exception.MaxChunkSizeExceededException
@@ -32,10 +35,9 @@ import org.woo.storagesdk.exception.ServiceUnavailableException
 import org.woo.storagesdk.exception.TimeoutException
 import org.woo.storagesdk.interceptor.UploadInterceptor
 import java.io.InputStream
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.jvm.Throws
 import kotlin.math.ceil
 
 class StorageService(
@@ -188,6 +190,7 @@ class StorageService(
         objectKey: String,
         fileLength: Long?,
         contentType: String,
+        vararg interceptors: ClientInterceptor,
     ): String {
         require(uploadStubToMinio != null) { "minio stub is null" }
 
@@ -219,6 +222,7 @@ class StorageService(
         expirySeconds: Int,
         responseContentType: String?,
         responseContentDisposition: String?,
+        vararg interceptors: ClientInterceptor,
     ): String {
         require(uploadStubToMinio != null) { "minio stub is null" }
 
@@ -232,6 +236,45 @@ class StorageService(
                 .setResponseContentDisposition(responseContentDisposition)
                 .build()
         return uploadStubToMinio.getPresignedDownloadUrl(request).url
+    }
+
+    override suspend fun uploadStreamToMinio(
+        spec: MinioUploadSpec,
+        vararg interceptors: ClientInterceptor,
+    ): MinioUploadResponse {
+        require(uploadStubToMinio != null) { "minio stub is null" }
+        val request =
+            flow {
+                val header =
+                    FileUploadSpec
+                        .newBuilder()
+                        .setBucket(spec.header.applicationId)
+                        .setObjectKey(spec.header.objectKey)
+                        .setContentType(spec.header.contentType)
+                        .setContentDisposition(spec.header.contentDisposition)
+                        .build()
+                emit(UploadFileRequest.newBuilder().setHeader(header).build())
+
+                val buf = ByteArray(spec.header.contentLength)
+                while (true) {
+                    val read = spec.data.read(buf)
+                    if (read <= 0) break
+                    emit(
+                        UploadFileRequest
+                            .newBuilder()
+                            .setChunk(ByteString.copyFrom(buf, 0, read))
+                            .build(),
+                    )
+                }
+            }.flowOn(uploadDispatcher)
+
+        val response = uploadStubToMinio.uploadFile(request)
+        return MinioUploadResponse(
+            bucket = response.bucket,
+            objectKey = response.objectKey,
+            size = response.size,
+            etag = response.etag,
+        )
     }
 
     private fun canonicalContentTypeFromExt(ext: String): String? =

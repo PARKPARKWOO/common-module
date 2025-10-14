@@ -1,6 +1,8 @@
 package org.woo.storagesdk.usecase
 
 import io.grpc.ClientInterceptor
+import org.woo.storagesdk.dto.MinioUploadResponse
+import org.woo.storagesdk.dto.MinioUploadSpec
 import java.io.InputStream
 
 interface StorageClient {
@@ -27,6 +29,7 @@ interface StorageClient {
         objectKey: String,
         fileLength: Long?,
         contentType: String,
+        vararg interceptors: ClientInterceptor = emptyArray(),
     ): String
 
     suspend fun getDownloadPresignedUrl(
@@ -35,5 +38,11 @@ interface StorageClient {
         expirySeconds: Int = DEFAULT_PRESIGN_URL_EXPIRY_SEC,
         responseContentType: String? = null,
         responseContentDisposition: String? = null,
+        vararg interceptors: ClientInterceptor = emptyArray(),
     ): String
+
+    suspend fun uploadStreamToMinio(
+        spec: MinioUploadSpec,
+        vararg interceptors: ClientInterceptor = emptyArray(),
+    ): MinioUploadResponse
 }
