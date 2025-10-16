@@ -226,16 +226,22 @@ class StorageService(
     ): String {
         require(uploadStubToMinio != null) { "minio stub is null" }
 
-        val request =
+        val builder =
             GetPresignedDownloadUrlRequest
                 .newBuilder()
                 .setBucket(bucket)
                 .setObjectKey(objectKey)
                 .setExpirySeconds(expirySeconds)
-                .setResponseContentType(responseContentType)
-                .setResponseContentDisposition(responseContentDisposition)
-                .build()
-        return uploadStubToMinio.getPresignedDownloadUrl(request).url
+
+        responseContentType?.takeIf { it.isNotBlank() }?.let {
+            builder.setResponseContentType(responseContentType)
+        }
+
+        responseContentDisposition?.takeIf { it.isNotBlank() }?.let {
+            builder.setResponseContentDisposition(it)
+        }
+
+        return uploadStubToMinio.getPresignedDownloadUrl(builder.build()).url
     }
 
     override suspend fun uploadStreamToMinio(
