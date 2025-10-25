@@ -7,6 +7,7 @@ import com.example.grpc.fileupload.FileUploadSpec
 import com.example.grpc.fileupload.GetPresignedDownloadUrlRequest
 import com.example.grpc.fileupload.GetPresignedUploadUrlRequest
 import com.example.grpc.fileupload.StorageServiceGrpcKt
+import com.example.grpc.fileupload.UploadFileRequest
 import com.google.protobuf.ByteString
 import io.grpc.ClientInterceptor
 import io.grpc.Status
@@ -23,6 +24,8 @@ import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.withContext
 import org.woo.grpc.circuitbreaker.GrpcCircuitBreaker
 import org.woo.grpc.circuitbreaker.ServiceStateRegistry
+import org.woo.storagesdk.dto.MinioUploadResponse
+import org.woo.storagesdk.dto.MinioUploadSpec
 import org.woo.storagesdk.exception.FileUploadException
 import org.woo.storagesdk.exception.InvalidArgumentException
 import org.woo.storagesdk.exception.MaxChunkSizeExceededException
@@ -32,10 +35,9 @@ import org.woo.storagesdk.exception.ServiceUnavailableException
 import org.woo.storagesdk.exception.TimeoutException
 import org.woo.storagesdk.interceptor.UploadInterceptor
 import java.io.InputStream
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.jvm.Throws
 import kotlin.math.ceil
 
 class StorageService(
@@ -188,6 +190,7 @@ class StorageService(
         objectKey: String,
         fileLength: Long?,
         contentType: String,
+        vararg interceptors: ClientInterceptor,
     ): String {
         require(uploadStubToMinio != null) { "minio stub is null" }
 
@@ -219,19 +222,101 @@ class StorageService(
         expirySeconds: Int,
         responseContentType: String?,
         responseContentDisposition: String?,
+        vararg interceptors: ClientInterceptor,
     ): String {
         require(uploadStubToMinio != null) { "minio stub is null" }
 
-        val request =
+        val builder =
             GetPresignedDownloadUrlRequest
                 .newBuilder()
                 .setBucket(bucket)
                 .setObjectKey(objectKey)
                 .setExpirySeconds(expirySeconds)
-                .setResponseContentType(responseContentType)
-                .setResponseContentDisposition(responseContentDisposition)
-                .build()
-        return uploadStubToMinio.getPresignedDownloadUrl(request).url
+
+        responseContentType?.takeIf { it.isNotBlank() }?.let {
+            builder.setResponseContentType(responseContentType)
+        }
+
+        responseContentDisposition?.takeIf { it.isNotBlank() }?.let {
+            builder.setResponseContentDisposition(it)
+        }
+
+        return uploadStubToMinio.getPresignedDownloadUrl(builder.build()).url
+    }
+
+    override suspend fun uploadStreamToMinio(
+        spec: MinioUploadSpec,
+        vararg interceptors: ClientInterceptor,
+    ): MinioUploadResponse {
+        require(uploadStubToMinio != null) { "minio stub is null" }
+
+        val stub =
+            uploadStubToMinio!!
+                .withInterceptors(*interceptors)
+        // .withCallCredentials(Bearer(jwt)) // 필요 시
+        // .withDeadlineAfter(60, TimeUnit.SECONDS) // 옵션
+
+        val headerBuilder =
+            FileUploadSpec
+                .newBuilder()
+                .setBucket(spec.header.applicationId)
+                .setUploadedBy(spec.header.uploadedBy)
+                .setObjectKey(spec.header.objectKey)
+                .setContentType(spec.header.contentType ?: "application/octet-stream")
+
+        spec.header.contentDisposition?.takeIf { it.isNotBlank() }?.let {
+            headerBuilder.setContentDisposition(it)
+        }
+
+        spec.header.metadata?.forEach { (k, v) -> headerBuilder.putMetadata(k, v) }
+
+        val chunkSize = 64 * 1024 // 64KB (서버가 MinIO로 단일 스트림 put이면 충분)
+        val maxBytes = spec.header.contentLength.takeIf { it > 0 } // 선택: 상한
+
+        val requestFlow =
+            flow {
+                emit(UploadFileRequest.newBuilder().setHeader(headerBuilder.build()).build())
+                var sent = 0L
+                val buf = ByteArray(chunkSize)
+
+                spec.data.use { input ->
+                    while (true) {
+                        if (maxBytes != null && sent >= maxBytes) break
+                        val read = input.read(buf)
+                        if (read == -1) break
+                        if (maxBytes != null && sent + read > maxBytes) {
+                            // 상한 초과 방지: 초과분 잘라내기
+                            val allow = (maxBytes - sent).toInt()
+                            if (allow <= 0) break
+                            emit(
+                                UploadFileRequest
+                                    .newBuilder()
+                                    .setChunk(ByteString.copyFrom(buf, 0, allow))
+                                    .build(),
+                            )
+                            sent += allow
+                            break
+                        } else {
+                            emit(
+                                UploadFileRequest
+                                    .newBuilder()
+                                    .setChunk(ByteString.copyFrom(buf, 0, read))
+                                    .build(),
+                            )
+                            sent += read
+                        }
+                    }
+                }
+                // (옵션) sent < required 최소 크기면 INVALID_ARGUMENT로 실패 유도 가능
+            }.flowOn(uploadDispatcher)
+
+        val response = uploadStubToMinio.uploadFile(requestFlow)
+        return MinioUploadResponse(
+            bucket = response.bucket,
+            objectKey = response.objectKey,
+            size = response.size,
+            etag = response.etag,
+        )
     }
 
     private fun canonicalContentTypeFromExt(ext: String): String? =
