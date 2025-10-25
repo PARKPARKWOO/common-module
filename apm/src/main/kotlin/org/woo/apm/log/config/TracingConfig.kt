@@ -2,11 +2,16 @@ package org.woo.apm.log.config
 
 import brave.Tracer
 import brave.Tracing
+import brave.baggage.BaggageField
+import brave.baggage.CorrelationScopeConfig
+import brave.context.slf4j.MDCScopeDecorator
+import brave.propagation.ThreadLocalCurrentTraceContext
 import brave.sampler.Sampler
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.server.WebFilter
+import org.woo.apm.log.constant.ContextConstant.SPAN_ID
 import org.woo.apm.log.constant.ContextConstant.TRACE_ID
 
 @Configuration
@@ -34,5 +39,23 @@ class TracingConfig(
             .newBuilder()
             .localServiceName(applicationName)
             .sampler(Sampler.ALWAYS_SAMPLE)
-            .build()
+            .currentTraceContext(
+                ThreadLocalCurrentTraceContext
+                    .newBuilder()
+                    .addScopeDecorator(
+                        MDCScopeDecorator
+                            .newBuilder()
+                            .add(
+                                CorrelationScopeConfig.SingleCorrelationField
+                                    .newBuilder(BaggageField.getByName(TRACE_ID))
+                                    .name("traceId")
+                                    .build(),
+                            ).add(
+                                CorrelationScopeConfig.SingleCorrelationField
+                                    .newBuilder(BaggageField.getByName(SPAN_ID))
+                                    .name("spanId")
+                                    .build(),
+                            ).build(),
+                    ).build(),
+            ).build()
 }
