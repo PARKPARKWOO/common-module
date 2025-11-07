@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.server.WebFilter
+import org.woo.apm.log.constant.ContextConstant.SPAN_ID
 import org.woo.apm.log.constant.ContextConstant.TRACE_ID
 
 @Configuration
@@ -22,6 +23,7 @@ class TracingConfig(
                 val currentSpan = tracer.currentSpan()
                 if (currentSpan != null) {
                     exchange.response.headers.add(TRACE_ID, currentSpan.context().traceIdString())
+                    exchange.response.headers.add(SPAN_ID, currentSpan.context().spanIdString())
                 } else {
                     // Tracing Context가 없는 경우를 처리 (Optional: 로그 추가)
                     exchange.response.headers.add(TRACE_ID, "no-span")
