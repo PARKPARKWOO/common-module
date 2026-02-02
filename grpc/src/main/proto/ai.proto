@@ -82,3 +82,10 @@ message EmbeddingApiResponse {
   optional int32 dimensions = 3;
   optional string model = 4;
 }
+
+// ============== Service ==============
+
+service AiApiService {
+  rpc Chat(AiApiRequest) returns (AiApiResponse);
+  rpc Embedding(EmbeddingApiRequest) returns (EmbeddingApiResponse);
+}
