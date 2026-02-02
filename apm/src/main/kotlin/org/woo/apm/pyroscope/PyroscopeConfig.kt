@@ -4,6 +4,7 @@ import io.pyroscope.http.Format
 import io.pyroscope.javaagent.EventType
 import io.pyroscope.javaagent.PyroscopeAgent
 import io.pyroscope.javaagent.config.Config.Builder
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -13,11 +14,12 @@ import org.springframework.context.annotation.Configuration
 class PyroscopeConfig(
     @Value("\${spring.application.name}")
     val appName: String,
-    @Value("\${pyroscope.address}")
+    @Value("\${pyroscope.server.address}")
     val pyroscopeAddress: String,
 ) {
-    init {
-        print("Initialize pyroscope")
+    @PostConstruct
+    fun init() {
+        print("Initialize pyroscope host: $pyroscopeAddress")
         PyroscopeAgent.start(
             Builder()
                 .setApplicationName(appName)
