@@ -42,6 +42,7 @@ message AiApiRequest {
   string session_id = 3;
   optional string response_schema = 4;
   optional int32 timeout_seconds = 5;
+  string application_id = 6;  // 호출 서비스에서 전달하는 Application 식별자 (API 키 조회용)
 }
 
 message AiApiResponse {
@@ -70,6 +71,7 @@ message EmbeddingVendorOptions {
 message EmbeddingApiRequest {
   repeated EmbeddingModelSpec models = 1;
   repeated string texts = 2;
+  string application_id = 3;  // 호출 서비스에서 전달하는 Application 식별자 (API 키 조회용)
 }
 
 message EmbeddingVector {
