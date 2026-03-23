@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "com.example.grpc.minioadmin";
+option java_outer_classname = "MinioAdminProto";
+
+package minioadmin;
+
+message DeleteObjectRequest {
+  string bucket = 1;
+  string object_key = 2;
+}
+
+service MinioAdminService {
+  rpc DeleteObject(DeleteObjectRequest) returns (google.protobuf.Empty);
+}
