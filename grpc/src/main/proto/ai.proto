@@ -53,6 +53,46 @@ message AiApiResponse {
   bool is_error = 3;
 }
 
+// ============== Vision (Multimodal Image Input) ==============
+
+message BytesImage {
+  bytes data = 1;
+  string mime_type = 2;   // "image/png", "image/jpeg", "image/webp", "image/heic", "image/heif"
+}
+
+message UrlImage {
+  string url = 1;         // Full URL (recommended: Storage presigned URL)
+}
+
+message StorageKeyImage {
+  string bucket = 1;
+  string key = 2;
+}
+
+message ImageInput {
+  oneof source {
+    BytesImage bytes = 1;
+    UrlImage url = 2;
+    StorageKeyImage storage_key = 3;
+  }
+}
+
+message AiVisionRequest {
+  repeated ModelSpec models = 1;
+  repeated ChatMessage messages = 2;
+  repeated ImageInput images = 3;
+  string application_id = 4;
+  optional int32 timeout_seconds = 5;
+  optional int32 max_tokens = 6;
+  optional string request_type = 7;
+}
+
+message AiVisionResponse {
+  Vendor vendor = 1;
+  string result = 2;
+  bool is_error = 3;
+}
+
 // ============== Embedding ==============
 
 message EmbeddingModelSpec {
@@ -92,4 +132,5 @@ message EmbeddingApiResponse {
 service AiApiService {
   rpc Chat(AiApiRequest) returns (AiApiResponse);
   rpc Embedding(EmbeddingApiRequest) returns (EmbeddingApiResponse);
+  rpc Vision(AiVisionRequest) returns (AiVisionResponse);
 }
