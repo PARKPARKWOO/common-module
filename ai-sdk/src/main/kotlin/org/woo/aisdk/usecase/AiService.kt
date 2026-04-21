@@ -16,6 +16,7 @@ class AiService(
     companion object {
         private const val CHAT_METHOD_NAME = "Chat"
         private const val EMBEDDING_METHOD_NAME = "Embedding"
+        private const val VISION_METHOD_NAME = "Vision"
     }
 
     init {
@@ -109,6 +110,61 @@ class AiService(
                     stub
                 }
             stubWithInterceptors.embedding(requestBuilder.build())
+        }
+    }
+
+    override suspend fun vision(
+        messages: List<Pair<String, String>>,
+        images: List<VisionImage>,
+        applicationId: String,
+        models: List<Pair<AiProto.Vendor, String>>,
+        timeoutSeconds: Int?,
+        maxTokens: Int?,
+        requestType: String?,
+        vararg interceptors: ClientInterceptor,
+    ): AiProto.AiVisionResponse {
+        require(images.isNotEmpty()) { "vision() requires at least one image" }
+
+        val requestBuilder =
+            AiProto.AiVisionRequest
+                .newBuilder()
+                .setApplicationId(applicationId)
+                .addAllMessages(
+                    messages.map { (role, content) ->
+                        AiProto.ChatMessage
+                            .newBuilder()
+                            .setRole(role)
+                            .setContent(content)
+                            .build()
+                    },
+                )
+                .addAllImages(images.map { it.toProto() })
+
+        if (models.isNotEmpty()) {
+            requestBuilder.addAllModels(
+                models.map { (vendor, version) ->
+                    AiProto.ModelSpec
+                        .newBuilder()
+                        .setVendor(vendor)
+                        .setVersion(version)
+                        .build()
+                },
+            )
+        }
+        if (timeoutSeconds != null) requestBuilder.setTimeoutSeconds(timeoutSeconds)
+        if (maxTokens != null) requestBuilder.setMaxTokens(maxTokens)
+        if (requestType != null) requestBuilder.setRequestType(requestType)
+
+        circuitBreaker.checkCircuitBreaker(VISION_METHOD_NAME)
+
+        return withContext(dispatcher) {
+            val stubWithInterceptors =
+                if (interceptors.isNotEmpty()) {
+                    stub.withInterceptors(*interceptors)
+                } else {
+                    stub
+                }
+            stubWithInterceptors.vision(requestBuilder.build())
         }
     }
 }
