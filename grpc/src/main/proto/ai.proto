@@ -93,6 +93,36 @@ message AiVisionResponse {
   bool is_error = 3;
 }
 
+// ============== Document (Multimodal PDF URL Input) ==============
+
+message PdfUrlInput {
+  string url = 1;         // Full URL (recommended: Storage presigned URL)
+}
+
+// 현재 url 만 지원. 추후 PdfBytes / PdfStorageKey 추가 가능.
+message DocumentInput {
+  oneof source {
+    PdfUrlInput url = 1;
+  }
+}
+
+message AiDocumentRequest {
+  repeated ModelSpec models = 1;
+  repeated ChatMessage messages = 2;
+  repeated DocumentInput documents = 3;
+  string application_id = 4;
+  optional int32 timeout_seconds = 5;
+  optional int32 max_tokens = 6;
+  optional string request_type = 7;
+  string session_id = 8;
+}
+
+message AiDocumentResponse {
+  Vendor vendor = 1;
+  string result = 2;
+  bool is_error = 3;
+}
+
 // ============== Embedding ==============
 
 message EmbeddingModelSpec {
@@ -133,4 +163,5 @@ service AiApiService {
   rpc Chat(AiApiRequest) returns (AiApiResponse);
   rpc Embedding(EmbeddingApiRequest) returns (EmbeddingApiResponse);
   rpc Vision(AiVisionRequest) returns (AiVisionResponse);
+  rpc Document(AiDocumentRequest) returns (AiDocumentResponse);
 }
