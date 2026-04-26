@@ -17,6 +17,7 @@ class AiService(
         private const val CHAT_METHOD_NAME = "Chat"
         private const val EMBEDDING_METHOD_NAME = "Embedding"
         private const val VISION_METHOD_NAME = "Vision"
+        private const val DOCUMENT_METHOD_NAME = "Document"
     }
 
     init {
@@ -165,6 +166,63 @@ class AiService(
                     stub
                 }
             stubWithInterceptors.vision(requestBuilder.build())
+        }
+    }
+
+    override suspend fun document(
+        messages: List<Pair<String, String>>,
+        documents: List<DocumentSource>,
+        applicationId: String,
+        sessionId: String,
+        models: List<Pair<AiProto.Vendor, String>>,
+        timeoutSeconds: Int?,
+        maxTokens: Int?,
+        requestType: String?,
+        vararg interceptors: ClientInterceptor,
+    ): AiProto.AiDocumentResponse {
+        require(documents.isNotEmpty()) { "document() requires at least one DocumentSource" }
+
+        val requestBuilder =
+            AiProto.AiDocumentRequest
+                .newBuilder()
+                .setApplicationId(applicationId)
+                .setSessionId(sessionId)
+                .addAllMessages(
+                    messages.map { (role, content) ->
+                        AiProto.ChatMessage
+                            .newBuilder()
+                            .setRole(role)
+                            .setContent(content)
+                            .build()
+                    },
+                )
+                .addAllDocuments(documents.map { it.toProto() })
+
+        if (models.isNotEmpty()) {
+            requestBuilder.addAllModels(
+                models.map { (vendor, version) ->
+                    AiProto.ModelSpec
+                        .newBuilder()
+                        .setVendor(vendor)
+                        .setVersion(version)
+                        .build()
+                },
+            )
+        }
+        if (timeoutSeconds != null) requestBuilder.setTimeoutSeconds(timeoutSeconds)
+        if (maxTokens != null) requestBuilder.setMaxTokens(maxTokens)
+        if (requestType != null) requestBuilder.setRequestType(requestType)
+
+        circuitBreaker.checkCircuitBreaker(DOCUMENT_METHOD_NAME)
+
+        return withContext(dispatcher) {
+            val stubWithInterceptors =
+                if (interceptors.isNotEmpty()) {
+                    stub.withInterceptors(*interceptors)
+                } else {
+                    stub
+                }
+            stubWithInterceptors.document(requestBuilder.build())
         }
     }
 }
