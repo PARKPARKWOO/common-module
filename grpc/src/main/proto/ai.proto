@@ -45,12 +45,15 @@ message AiApiRequest {
   string application_id = 6;  // 호출 서비스에서 전달하는 Application 식별자 (API 키 조회용)
   optional int32 max_tokens = 7;         // 응답 최대 토큰 수 제어 (기본값: 2000)
   optional string request_type = 8;      // 요청 타입: "quiz", "review", "interview" (로깅/모니터링용)
+  optional bool fallback = 9;            // true: list 순차 시도, 첫 성공 응답 반환 / false(기본): 기존 fan-out
 }
 
 message AiApiResponse {
   Vendor vendor = 1;
   string result = 2;
   bool is_error = 3;
+  optional string used_vendor = 4;       // fallback 으로 실제 사용된 vendor (예: "ANTHROPIC")
+  optional string used_model = 5;        // fallback 으로 실제 사용된 model (예: "claude-sonnet-4-6")
 }
 
 // ============== Vision (Multimodal Image Input) ==============
@@ -85,12 +88,15 @@ message AiVisionRequest {
   optional int32 timeout_seconds = 5;
   optional int32 max_tokens = 6;
   optional string request_type = 7;
+  optional bool fallback = 8;            // true: list 순차 시도, 첫 성공 응답 반환 / false(기본): 기존 fan-out
 }
 
 message AiVisionResponse {
   Vendor vendor = 1;
   string result = 2;
   bool is_error = 3;
+  optional string used_vendor = 4;
+  optional string used_model = 5;
 }
 
 // ============== Document (Multimodal PDF URL Input) ==============
@@ -115,12 +121,15 @@ message AiDocumentRequest {
   optional int32 max_tokens = 6;
   optional string request_type = 7;
   string session_id = 8;
+  optional bool fallback = 9;            // true: list 순차 시도, 첫 성공 응답 반환 / false(기본): 기존 fan-out
 }
 
 message AiDocumentResponse {
   Vendor vendor = 1;
   string result = 2;
   bool is_error = 3;
+  optional string used_vendor = 4;
+  optional string used_model = 5;
 }
 
 // ============== Embedding ==============
