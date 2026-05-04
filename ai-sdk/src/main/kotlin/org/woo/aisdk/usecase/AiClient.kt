@@ -13,6 +13,7 @@ interface AiClient {
         responseSchema: String? = null,
         maxTokens: Int? = null,
         requestType: String? = null,
+        fallback: Boolean = false,
         vararg interceptors: ClientInterceptor,
     ): AiProto.AiApiResponse
 
@@ -43,6 +44,7 @@ interface AiClient {
         timeoutSeconds: Int? = null,
         maxTokens: Int? = null,
         requestType: String? = null,
+        fallback: Boolean = false,
         vararg interceptors: ClientInterceptor,
     ): AiProto.AiVisionResponse
 
@@ -63,6 +65,7 @@ interface AiClient {
         timeoutSeconds: Int? = null,
         maxTokens: Int? = null,
         requestType: String? = null,
+        fallback: Boolean = false,
         vararg interceptors: ClientInterceptor,
     ): AiProto.AiDocumentResponse
 }

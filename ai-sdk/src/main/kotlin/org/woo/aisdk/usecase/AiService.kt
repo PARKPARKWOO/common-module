@@ -33,6 +33,7 @@ class AiService(
         responseSchema: String?,
         maxTokens: Int?,
         requestType: String?,
+        fallback: Boolean,
         vararg interceptors: ClientInterceptor,
     ): AiProto.AiApiResponse {
         val requestBuilder =
@@ -64,6 +65,7 @@ class AiService(
         if (timeoutSeconds != null) requestBuilder.setTimeoutSeconds(timeoutSeconds)
         if (maxTokens != null) requestBuilder.setMaxTokens(maxTokens)
         if (requestType != null) requestBuilder.setRequestType(requestType)
+        if (fallback) requestBuilder.setFallback(true)
 
         circuitBreaker.checkCircuitBreaker(CHAT_METHOD_NAME)
 
@@ -122,6 +124,7 @@ class AiService(
         timeoutSeconds: Int?,
         maxTokens: Int?,
         requestType: String?,
+        fallback: Boolean,
         vararg interceptors: ClientInterceptor,
     ): AiProto.AiVisionResponse {
         require(images.isNotEmpty()) { "vision() requires at least one image" }
@@ -155,6 +158,7 @@ class AiService(
         if (timeoutSeconds != null) requestBuilder.setTimeoutSeconds(timeoutSeconds)
         if (maxTokens != null) requestBuilder.setMaxTokens(maxTokens)
         if (requestType != null) requestBuilder.setRequestType(requestType)
+        if (fallback) requestBuilder.setFallback(true)
 
         circuitBreaker.checkCircuitBreaker(VISION_METHOD_NAME)
 
@@ -178,6 +182,7 @@ class AiService(
         timeoutSeconds: Int?,
         maxTokens: Int?,
         requestType: String?,
+        fallback: Boolean,
         vararg interceptors: ClientInterceptor,
     ): AiProto.AiDocumentResponse {
         require(documents.isNotEmpty()) { "document() requires at least one DocumentSource" }
@@ -212,6 +217,7 @@ class AiService(
         if (timeoutSeconds != null) requestBuilder.setTimeoutSeconds(timeoutSeconds)
         if (maxTokens != null) requestBuilder.setMaxTokens(maxTokens)
         if (requestType != null) requestBuilder.setRequestType(requestType)
+        if (fallback) requestBuilder.setFallback(true)
 
         circuitBreaker.checkCircuitBreaker(DOCUMENT_METHOD_NAME)
 
